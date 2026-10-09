@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}</style>
+<title>Odoo Performance Monitor Case Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single reading column (~720px) with full-width bands for the worker diagram and tables; ops-console flavour, calm slate neutrals, amber = "slow" accent */
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --fg:#17202b; --muted:#5a6676; --line:#dde2e9;
+  --accent:#b86a00; --accent-soft:#fff3e0; --ok:#1f7a4d; --ok-soft:#e6f4ec; --bad:#b3261e; --bad-soft:#fdeceb; --idle:#c9d1dc;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161d; --surface:#18202a; --fg:#e6ebf1; --muted:#9aa7b7; --line:#2a3542;
+  --accent:#f0a33a; --accent-soft:#2e2414; --ok:#5cc58f; --ok-soft:#14281e; --bad:#f2847c; --bad-soft:#2f1a19; --idle:#3a4757; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161d; --surface:#18202a; --fg:#e6ebf1; --muted:#9aa7b7; --line:#2a3542;
+  --accent:#f0a33a; --accent-soft:#2e2414; --ok:#5cc58f; --ok-soft:#14281e; --bad:#f2847c; --bad-soft:#2f1a19; --idle:#3a4757; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:17px/1.6 var(--body);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+header{padding-block:44px 8px;display:flex;flex-direction:column;gap:14px}
+.eyebrow{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:800 clamp(34px,6vw,52px)/1.05 var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font:600 26px/1.2 var(--display);margin:0 0 12px;text-wrap:balance}
+h3{font:600 18px/1.3 var(--body);margin:0 0 6px}
+p{margin:0 0 12px;max-width:68ch}
+.lede{font-size:20px;color:var(--muted);max-width:60ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font:14px/1.4 var(--mono);color:var(--muted)}
+.meta a{color:var(--accent)}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{display:flex;flex-direction:column;gap:4px}
+.num{font:600 12px/1 var(--mono);color:var(--accent);letter-spacing:.06em;margin-bottom:6px}
+.quote{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 18px;border-radius:0 8px 8px 0;font-size:19px;line-height:1.5}
+.quote p:last-child{margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat b{font:800 30px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:14px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px/1.3 var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+code{font:14px var(--mono);background:var(--bg);border:1px solid var(--line);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.pill{display:inline-block;font:600 12px/1 var(--mono);padding:5px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.part{background:var(--accent-soft);color:var(--accent)}
+.pill.no{background:var(--bad-soft);color:var(--bad)}
+ol.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:6px}
+ol.timeline li{position:relative;padding:0 0 18px 22px}
+ol.timeline li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+ol.timeline li:last-child{padding-bottom:0}
+.when{font:600 13px/1.4 var(--mono);color:var(--accent)}
+ul{margin:0 0 12px;padding-left:20px}
+li{margin-bottom:4px}
+.diagram svg{width:100%;height:auto;display:block}
+.diagram text{font-family:var(--mono);font-size:12px;fill:var(--muted)}
+.diagram .lbl{fill:var(--fg);font-weight:600}
+pre{margin:0;overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font:13px/1.5 var(--mono)}
+.note{font-size:14px;color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-top:20px;display:flex;flex-direction:column;gap:6px}
+footer .name{font:800 22px/1.2 var(--display)}
+@media (prefers-reduced-motion: no-preference){.bar-slow{animation:pulse 2.4s ease-in-out infinite}}
+@keyframes pulse{50%{opacity:.6}}
+</style>
+</head><body>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">100x Engineers · Cohort 7 · Final Capstone (solo, custom idea)</div>
+  <h1>Odoo Performance Monitor</h1>
+  <p class="lede">Finding the one slow function that freezes Odoo for everyone, with its user, module and line of code, always on in production.</p>
+  <div class="meta">
+    <span>Yasir Rauf, ERP Administrator</span>
+    <span>Riyadh, Saudi Arabia</span>
+    <a href="https://github.com/khyasir/odoo-performance-monitor">GitHub: khyasir/odoo-performance-monitor</a>
+  </div>
+</header>
+
+<section>
+  <div class="num">1 · OBSERVATION</div>
+  <h2>What I see every week</h2>
+  <div class="quote">
+    <p>When one heavy action runs in our ERP, every user on that system waits, and as the administrator I cannot see which action, user or line of code caused it. So we restart the service and pay for bigger servers, and the slowness comes back.</p>
+  </div>
+</section>
+
+<section class="diagram">
+  <div class="panel">
+    <h3>Why one function slows down everyone</h3>
+    <p class="note">Odoo serves requests with a fixed pool of workers. One slow call holds a worker, the next requests queue behind it, and the whole system feels slow.</p>
+    <svg viewBox="0 0 680 190" role="img" aria-label="Four Odoo workers: one is held by a slow function for 30 seconds while queued requests wait">
+      <text x="0" y="22" class="lbl">Workers</text>
+      <text x="0" y="52">worker 1</text>
+      <rect x="80" y="40" width="520" height="18" rx="4" fill="var(--bad)" class="bar-slow"/>
+      <text x="90" y="53" fill="var(--surface)" style="fill:var(--surface);font-weight:600">sale.order confirm · 30 s · 4,812 SQL</text>
+      <text x="0" y="82">worker 2</text>
+      <rect x="80" y="70" width="60" height="18" rx="4" fill="var(--ok)"/><rect x="150" y="70" width="380" height="18" rx="4" fill="var(--accent)"/>
+      <text x="160" y="83" style="fill:var(--surface);font-weight:600">report waiting on lock</text>
+      <text x="0" y="112">worker 3</text>
+      <rect x="80" y="100" width="40" height="18" rx="4" fill="var(--ok)"/><rect x="130" y="100" width="420" height="18" rx="4" fill="var(--accent)"/>
+      <text x="140" y="113" style="fill:var(--surface);font-weight:600">cron piled up</text>
+      <text x="0" y="142">worker 4</text>
+      <rect x="80" y="130" width="500" height="18" rx="4" fill="var(--accent)"/>
+      <text x="90" y="143" style="fill:var(--surface);font-weight:600">POS order slow</text>
+      <text x="0" y="178" class="lbl">Queue</text>
+      <g fill="var(--idle)"><rect x="80" y="166" width="22" height="14" rx="3"/><rect x="108" y="166" width="22" height="14" rx="3"/><rect x="136" y="166" width="22" height="14" rx="3"/><rect x="164" y="166" width="22" height="14" rx="3"/><rect x="192" y="166" width="22" height="14" rx="3"/><rect x="220" y="166" width="22" height="14" rx="3"/></g>
+      <text x="252" y="178">every new click waits here</text>
+    </svg>
+    <p class="note" style="margin:8px 0 0">Illustration of the pattern. The function name is an example.</p>
+  </div>
+</section>
+
+<section>
+  <div class="num">2 · PERSONAL OWNERSHIP</div>
+  <h2>I lived this, I did not read about it</h2>
+  <div class="grid2">
+    <div class="panel stat"><b>8 years</b><span>running Odoo ERP across 20+ projects in Pakistan and Saudi Arabia</span></div>
+    <div class="panel stat"><b>25 servers</b><span>Odoo servers I manage today, each one showing the same slowness pattern</span></div>
+    <div class="panel stat"><b>3 to 4 a week</b><span>slowdown incidents on our main live server before this work</span></div>
+    <div class="panel stat"><b>Restart</b><span>the only fix that worked. Bigger servers made it less frequent, never gone</span></div>
+  </div>
+  <p style="margin-top:14px">Fixing this is part of my job and my KPIs. Management linked solving the slowness to my appraisal.</p>
+</section>
+
+<section>
+  <div class="num">3 · 60-SECOND PITCH</div>
+  <h2>Observation, bottleneck, hypothesis, consequence</h2>
+  <div class="panel">
+    <p><b>Observation.</b> In Odoo, one slow function blocks a worker and the whole system feels slow for every user.</p>
+    <p><b>Bottleneck.</b> The admin cannot see which function, user, module or line caused it, so nobody knows what code to fix.</p>
+    <p><b>Hypothesis.</b> If an always-on monitor shows the first offending function for every slowdown, admins will fix that exact code, and incidents and server cost will drop.</p>
+    <p style="margin:0"><b>Consequence.</b> Without it, companies keep restarting and buying bigger servers. Code stays slow and the bill keeps growing.</p>
+  </div>
+</section>
+
+<section>
+  <div class="num">4 · HYPOTHESIS AND FALSIFIER</div>
+  <h2>How I could be wrong</h2>
+  <p>For self-hosted Odoo admins with custom code and real load, the main reason slowness stays unsolved is the missing link between a slowdown and the exact function behind it. If the tool shows that function, admins will act on it.</p>
+  <div class="quote"><p><b>Falsifier:</b> if the tool shows the offending function but the admin does not get it fixed within 7 days, the hypothesis is wrong. Visibility alone would not be the real bottleneck.</p></div>
+  <p class="note" style="margin-top:10px">Supporting kill conditions from my discovery work: incidents do not drop by at least 30% after fixes, or fewer than 25% of admins act on a finding.</p>
+</section>
+
+<section>
+  <div class="num">5 · BASELINE AND TARGET</div>
+  <h2>The numbers</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Metric</th><th>Baseline</th><th>Target</th><th>How anyone can check it</th></tr></thead>
+    <tbody>
+      <tr><td>Slowdown incidents per month (main live server)</td><td>~12 (3 to 4 a week)</td><td>8 or fewer</td><td>Incident log + slow-call history in the tool</td></tr>
+      <tr><td>Server cost</td><td>Servers oversized to hide slow code</td><td>Right-sized from 14-day real usage</td><td>AWS bill before and after</td></tr>
+      <tr><td>Saving so far (MVP stage)</td><td>$0</td><td>Around $1,000 saved</td><td>AWS billing</td></tr>
+      <tr><td>Time from slowdown to known cause</td><td>Unknown, often never found</td><td>Offender shown automatically</td><td>Performance Issue created with function, user and line</td></tr>
+      <tr><td>Slow-code issues identified</td><td>0 (no visibility)</td><td>Every repeated slowdown becomes a tracked issue</td><td>450 open issues detected so far (section 11)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:8px">Assumptions: self-hosted Odoo 16, admin has root and can install modules, the company has a developer or vendor who can fix code.</p>
+</section>
+
+<section>
+  <div class="num">6 · NULL TEST</div>
+  <h2>Can an existing tool, or an LLM, already do this?</h2>
+  <p>I checked the official Odoo docs, OCA, the Odoo Apps store, GitHub and commercial APMs. Each tool solves one piece. None gives one always-on, Odoo-aware answer.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Option</th><th>What it does</th><th>What it misses</th></tr></thead>
+    <tbody>
+      <tr><td>Odoo built-in profiler</td><td>ORM + SQL flamegraph</td><td>Manual, one request at a time, not always on</td></tr>
+      <tr><td>pg_stat_statements</td><td>Slowest SQL</td><td>No link to the Odoo function, user or module</td></tr>
+      <tr><td>OCA profiler / slow SQL logger</td><td>Request or SQL logging</td><td>Dev tool or SQL only, no user or cron link</td></tr>
+      <tr><td>Sentry, New Relic, Datadog</td><td>Generic APM</td><td>Sampling, not Odoo-aware, paid per server</td></tr>
+      <tr><td>LLM + skill + connector</td><td>Can explain a query if you give it one</td><td>It has nothing to read. The data that links SQL to function, user and line is never captured in production. My tool captures it first, then uses AI to explain it.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="num">7 · VALIDATION</div>
+  <h2>Who confirmed it</h2>
+  <ul>
+    <li><b>3 informal trials</b> with Odoo admins using my first version: it produced actionable slow-function candidates in 3 of 3, and 2 of 3 acted on a finding within 2 days.</li>
+    <li><b>2 Odoo professionals at other companies</b> confirmed the same pattern with their own clients.</li>
+    <li><b>1 admin said, without being asked,</b> that he wanted the tool "at any cost".</li>
+    <li><b>Told about free alternatives first:</b> they had already tried config tuning, restarts and bigger servers. The problem came back each time.</li>
+    <li><b>Budget holder:</b> my management tied fixing this slowness to my KPIs, and the tool now runs on a live production server.</li>
+    <li><b>Public evidence:</b> years of Odoo forum threads about slowness, open GitHub performance bugs, and Odoo's own docs stating most bottlenecks are in database and code.</li>
+  </ul>
+  <p class="note">Formal recorded interviews with 5 non-friend admins are in progress and will be added to this page.</p>
+</section>
+
+<section>
+  <div class="num">8 · MANUAL DELIVERY</div>
+  <h2>I delivered the outcome by hand first</h2>
+  <p>Before automating, I ran the process manually with my first MVP modules, <code>wags_logger</code> and <code>wags_monitor</code>, on our company servers: capture slow calls, filter them by incident time, find the function, then get it fixed.</p>
+  <div class="grid2">
+    <div class="panel"><h3>What I did</h3><ul style="margin:0"><li>Optimized slow functions</li><li>Added missing database indexes</li><li>Right-sized servers</li></ul></div>
+    <div class="panel"><h3>Result</h3><p style="margin:0">Around <b>$1,000</b> saved in server cost. The MVP found about 60 to 70% of issues technically; the rest needed manual digging. That gap is what the final version closes.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="num">9 · JOURNEY</div>
+  <h2>From discovery to a live tool</h2>
+  <ol class="timeline">
+    <li><div class="when">May 2026</div><b>Problem proof and gap analysis.</b> Checked 11 existing tools. Each covered one layer.</li>
+    <li><div class="when">4 Jun 2026</div><b>100x Assignment 1: Discovery to MVP submitted.</b> Observation, causal chain, falsifiable hypothesis, 21-day manual MVP plan.
+      <figure style="margin:10px 0 0"><img src="img/assignment1.jpg" alt="100x learning platform showing Assignment 1: Discovery to MVP Submission, submitted 4 Jun 2026" style="border:1px solid var(--line);border-radius:8px;max-width:100%"><figcaption class="note">Assignment 1 submission on the 100x platform, 4 Jun 2026.</figcaption></figure></li>
+    <li><div class="when">After 4 Jun 2026</div><b>Small MVP: <code>wags_logger</code> + <code>wags_monitor</code> modules.</b> Followed my Discovery to MVP plan. About 60 to 70% technical, with a lot of manual work to read and verify the data. Using it I improved server performance and cut around $1,000 in server cost.</li>
+    <li><div class="when">Sep 2026</div><b>Final automation: <code>perf_monitor</code> + <code>perf_monitor_agent</code>.</b> Removes the manual work: automatic issue detection, AI explanations, right-size advice. Live in production and I use it every day.</li>
+    <li><div class="when">1 Oct 2026</div><b>Idea confirmed with the 100x team on a call.</b></li>
+    <li><div class="when">9 Oct 2026</div><b>Final capstone submitted.</b> Public repo, demo video and this case study.</li>
+  </ol>
+</section>
+
+<section>
+  <div class="num">10 · WHAT I BUILT</div>
+  <h2>Two Odoo modules</h2>
+  <div class="grid2">
+    <div class="panel"><h3><code>perf_monitor_agent</code></h3><p class="note" style="margin:0 0 8px">Installed in every monitored database</p><ul style="margin:0"><li>Tags every DB connection with db, user, <code>model.method</code> and route</li><li>Records each call slower than 10 s with user, SQL count, top SQL and the Python line</li><li>Collects DB latency, Top SQL and live queries every 5 min</li><li>Removes SQL literals before data leaves the database</li></ul></div>
+    <div class="panel"><h3><code>perf_monitor</code></h3><p class="note" style="margin:0 0 8px">Central dashboard</p><ul style="margin:0"><li>Server cards: green, yellow, red</li><li>Slow calls, Top SQL, live and blocked queries</li><li>Performance Issues built automatically, with N+1 and seq-scan rules</li><li>AI explanation and fix advice (advice only)</li><li>Right-size card from 14-day CloudWatch data</li></ul></div>
+  </div>
+  <pre style="margin-top:14px">[Odoo DB + agent] --HTTPS + per-server token--> [Central Odoo + perf_monitor]
+                                                     |-- Slow calls, Top SQL, Issues
+                                                     |-- AWS CloudWatch --> Right-size
+                                                     '-- AI model ------> Plain-language fix</pre>
+  <p class="note" style="margin-top:10px">Odoo 16, Python 3.8+, PostgreSQL on AWS RDS. 256 automated tests. Safety: measures and recommends only, never changes indexes, config or server size by itself.</p>
+</section>
+
+<section>
+  <div class="num">11 · SEEN IN PRODUCTION</div>
+  <h2>One real issue, from detection to fix</h2>
+  <p>Screenshots from the live tool. Client database names, user emails and internal links are blurred.</p>
+  <div class="grid2">
+    <div class="panel stat"><b>450</b><span>open performance issues found automatically and assigned to me</span></div>
+    <div class="panel stat"><b>76,172&times;</b><span>the same SQL ran inside one call, found in 11 databases</span></div>
+    <div class="panel stat"><b>276 s</b><span>slowest single call, from one cron job</span></div>
+    <div class="panel stat"><b>$0.53</b><span>AI cost to explain this issue and suggest the fix</span></div>
+  </div>
+
+  <h3 style="margin-top:22px">Step 1 · The tool finds and ranks the issues</h3>
+  <p>Every slow call is grouped into an issue with severity, type, occurrences, slowest time and the databases it hits.</p>
+  <figure style="margin:0"><img src="img/issues_list.jpg" alt="My Issues list: critical N+1 queries and slow crons with occurrences and slowest time" style="border:1px solid var(--line);border-radius:8px;max-width:100%"></figure>
+
+  <h3 style="margin-top:22px">Step 2 · What, where, how bad, how often</h3>
+  <p>The issue page answers the four questions an admin needs: the N+1 pattern, the exact model, method and cron, the slowest time, and how many times it happened. Plain explanation in English and Roman Urdu.</p>
+  <figure style="margin:0"><img src="img/issue_detail.jpg" alt="Issue detail: N+1 in pos.wags.simplified_invoices_job, 276 s slowest, 1,959 times" style="border:1px solid var(--line);border-radius:8px;max-width:100%"></figure>
+
+  <h3 style="margin-top:22px">Step 3 · AI explains the wrong code and shows the right code</h3>
+  <p>Claude Opus on Amazon Bedrock reads the evidence and the module code, explains the root cause and suggests a code diff. It is advice only: nothing is applied automatically.</p>
+  <figure style="margin:0"><img src="img/ai_advice.jpg" alt="AI advice tab: explanation, root cause and suggested fix as a code diff" style="border:1px solid var(--line);border-radius:8px;max-width:100%"></figure>
+
+  <h3 style="margin-top:22px">Step 4 · AI chat to clarify in simple words</h3>
+  <p>I can ask follow-up questions about this one issue, in English or Roman Urdu, and get answers with code.</p>
+  <figure style="margin:0"><img src="img/ai_chat.jpg" alt="AI chat on the issue, answering in simple Roman Urdu" style="border:1px solid var(--line);border-radius:8px;max-width:100%"></figure>
+
+  <h3 style="margin-top:22px">Step 5 · A ready prompt to fix and prove it</h3>
+  <p>The tool builds a full Claude Code prompt with the issue details, redacted SQL, logs and slow-call evidence. I paste it into Claude Code in the repository, run the tests against the database, verify the fix and close the issue.</p>
+  <figure style="margin:0"><img src="img/claude_prompt.jpg" alt="Claude Code Prompt tab with issue details, SQL pattern and slow-call evidence" style="border:1px solid var(--line);border-radius:8px;max-width:100%"></figure>
+</section>
+
+<section>
+  <div class="num">12 · 100X SELF-CHECK</div>
+  <h2>The 8 questions</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>#</th><th>Question</th><th>Status</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Observation in 2 lines, no tool names</td><td><span class="pill ok">Done</span></td><td>Section 1</td></tr>
+      <tr><td>2</td><td>Personally lived</td><td><span class="pill ok">Done</span></td><td>Section 2</td></tr>
+      <tr><td>3</td><td>60-second pitch</td><td><span class="pill ok">Done</span></td><td>Section 3 + demo video</td></tr>
+      <tr><td>4</td><td>Falsifier</td><td><span class="pill ok">Done</span></td><td>Section 4</td></tr>
+      <tr><td>5</td><td>Baseline and target numbers</td><td><span class="pill ok">Done</span></td><td>Section 5</td></tr>
+      <tr><td>6</td><td>Null test survives</td><td><span class="pill ok">Done</span></td><td>Section 6</td></tr>
+      <tr><td>7</td><td>5 non-friend validations</td><td><span class="pill part">Partial</span></td><td>Section 7</td></tr>
+      <tr><td>8</td><td>Manual delivery to at least 1 person</td><td><span class="pill ok">Done</span></td><td>Section 8</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="num">13 · NEXT</div>
+  <h2>What happens after submission</h2>
+  <ul>
+    <li>Roll the agent out to all 25 servers and track incidents per month against the baseline.</li>
+    <li>Finish 5 recorded interviews with Odoo admins outside my company.</li>
+    <li>Act on right-size recommendations to cut AWS cost further.</li>
+  </ul>
+</section>
+
+<footer>
+  <div class="name">Yasir Rauf</div>
+  <div class="note">ERP Administrator · 100x Engineers Cohort 7 · Final Capstone</div>
+  <div class="note">Code: <a href="https://github.com/khyasir/odoo-performance-monitor">github.com/khyasir/odoo-performance-monitor</a></div>
+</footer>
+
+</div>
+</body></html>

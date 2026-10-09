@@ -4,6 +4,8 @@ Find the exact function, user, query and line of code behind Odoo slowness, alwa
 
 Built by **Yasir Rauf**, ERP Administrator, as the final capstone for **100x Engineers Cohort 7**.
 
+**Case study:** https://khyasir.github.io/odoo-performance-monitor/
+
 ## The problem
 
 In Odoo, one slow function (an ORM call, compute field, cron or API call) holds a worker, and every other request waits behind it. The whole system feels slow for everyone, but the admin cannot see which function, user, module or line caused it. The usual fixes are restarts and bigger servers, which cost more and do not fix the code.
