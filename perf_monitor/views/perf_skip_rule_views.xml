@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_skip_rule_view_tree" model="ir.ui.view">
+        <field name="name">perf.skip.rule.tree</field>
+        <field name="model">perf.skip.rule</field>
+        <field name="arch" type="xml">
+            <tree string="Skip Rules" decoration-muted="not active or expired">
+                <field name="name"/>
+                <field name="match_type"/>
+                <field name="match_value"/>
+                <field name="until"/>
+                <field name="expired" optional="show"/>
+                <field name="hit_count"/>
+                <field name="last_hit"/>
+                <field name="user_id" optional="show" widget="many2one_avatar_user"/>
+                <field name="create_date" optional="show"/>
+                <field name="reason" optional="hide"/>
+                <field name="active" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_skip_rule_view_form" model="ir.ui.view">
+        <field name="name">perf.skip.rule.form</field>
+        <field name="model">perf.skip.rule</field>
+        <field name="arch" type="xml">
+            <form string="Skip Rule">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
+                    <widget name="web_ribbon" title="Expired" bg_color="bg-warning"
+                            attrs="{'invisible': ['|', ('active', '=', False), ('expired', '=', False)]}"/>
+                    <field name="active" invisible="1"/>
+                    <field name="expired" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Match">
+                            <field name="match_type"/>
+                            <field name="match_value"/>
+                            <field name="until" placeholder="Forever"/>
+                        </group>
+                        <group string="Hits">
+                            <field name="hit_count"/>
+                            <field name="last_hit"/>
+                            <field name="user_id"/>
+                            <field name="create_date"/>
+                        </group>
+                    </group>
+                    <group string="Reason">
+                        <field name="reason" nolabel="1" colspan="2"/>
+                    </group>
+                    <p class="text-muted small">Matching slow calls are still stored (Performance &gt; Slow Calls) but never
+                        create, reopen or escalate an issue. After "Until" (or when archived) the slowness makes issues again.</p>
+                    <field name="issue_ids" readonly="1">
+                        <tree>
+                            <field name="name"/>
+                            <field name="severity"/>
+                            <field name="state"/>
+                            <field name="last_seen"/>
+                        </tree>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="perf_skip_rule_view_search" model="ir.ui.view">
+        <field name="name">perf.skip.rule.search</field>
+        <field name="model">perf.skip.rule</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="match_value"/>
+                <field name="reason"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_type" string="Match type" context="{'group_by': 'match_type'}"/>
+                    <filter name="group_user" string="Skipped by" context="{'group_by': 'user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_skip_rule" model="ir.actions.act_window">
+        <field name="name">Skip Rules</field>
+        <field name="res_model">perf.skip.rule</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No skip rule</p>
+            <p>Use the Skip button of an issue to stop a known slowness from making issues for 7 days, 30 days or forever.</p>
+        </field>
+    </record>
+</odoo>

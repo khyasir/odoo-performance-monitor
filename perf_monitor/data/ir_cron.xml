@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Every cron name MUST start with "Perf Monitor: " (CRON_PREFIX): staging hygiene
+     scripts deactivate all crons except those whose name starts with this prefix. -->
+<odoo noupdate="1">
+    <record id="ir_cron_perf_purge_metrics" model="ir.cron">
+        <field name="name">Perf Monitor: Purge old metrics</field>
+        <field name="model_id" ref="model_perf_metric"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_perf_purge_sql" model="ir.cron">
+        <field name="name">Perf Monitor: Purge old SQL snapshots</field>
+        <field name="model_id" ref="model_perf_sql_snapshot"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_perf_purge_live" model="ir.cron">
+        <field name="name">Perf Monitor: Purge old live queries</field>
+        <field name="model_id" ref="model_perf_live_query"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_perf_purge_slow_calls" model="ir.cron">
+        <field name="name">Perf Monitor: Purge old agent slow calls</field>
+        <field name="model_id" ref="model_perf_agent_slow_call_remote"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_perf_refresh_status" model="ir.cron">
+        <field name="name">Perf Monitor: Refresh server status</field>
+        <field name="model_id" ref="model_perf_server"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_refresh()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_perf_build_issues" model="ir.cron">
+        <field name="name">Perf Monitor: build issues</field>
+        <field name="model_id" ref="model_perf_issue"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_build_issues()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_perf_rightsize" model="ir.cron">
+        <field name="name">Perf Monitor: Right-size from CloudWatch</field>
+        <field name="model_id" ref="model_perf_server"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_rightsize()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

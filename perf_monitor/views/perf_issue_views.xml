@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_issue_view_tree" model="ir.ui.view">
+        <field name="name">perf.issue.tree</field>
+        <field name="model">perf.issue</field>
+        <field name="arch" type="xml">
+            <tree string="Issues" create="false" decoration-muted="state in ('closed', 'skipped')"
+                  decoration-danger="severity == 'critical' and state not in ('closed', 'skipped')"
+                  decoration-warning="severity == 'high' and state not in ('closed', 'skipped')">
+                <field name="severity" widget="badge" decoration-danger="severity == 'critical'"
+                       decoration-warning="severity == 'high'" decoration-info="severity == 'medium'"/>
+                <field name="name"/>
+                <field name="issue_type" optional="show"/>
+                <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                <field name="occurrence_count"/>
+                <field name="count_7d" optional="show"/>
+                <field name="max_duration_s" optional="show"/>
+                <field name="avg_duration_s" optional="hide"/>
+                <field name="max_duration_ms" optional="hide" string="Slowest (ms, sortable)"/>
+                <field name="max_repeats" optional="hide"/>
+                <field name="max_sql_count" optional="hide"/>
+                <field name="first_seen" optional="hide"/>
+                <field name="create_date" string="Created" optional="show"/>
+                <field name="age_days" optional="show"/>
+                <field name="last_seen"/>
+                <field name="last_seen_hint" optional="show" decoration-muted="1"/>
+                <field name="ai_state" optional="show" widget="badge" decoration-success="ai_state == 'done'"
+                       decoration-warning="ai_state == 'limit'" decoration-danger="ai_state == 'error'"/>
+                <field name="ai_feedback" optional="hide"/>
+                <field name="reopen_count" optional="hide"/>
+                <field name="user_id" optional="show" widget="many2one_avatar_user"/>
+                <field name="activity_ids" optional="show" widget="list_activity"/>
+                <field name="state" widget="badge" decoration-info="state == 'new'" decoration-success="state == 'closed'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_issue_view_kanban" model="ir.ui.view">
+        <field name="name">perf.issue.kanban</field>
+        <field name="model">perf.issue</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" create="false" group_create="false" group_delete="false"
+                    group_edit="false" records_draggable="false" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="severity"/>
+                <field name="state"/>
+                <field name="issue_type"/>
+                <field name="tag_ids"/>
+                <field name="occurrence_count"/>
+                <field name="max_duration_s"/>
+                <field name="last_seen"/>
+                <field name="last_seen_hint"/>
+                <field name="ai_state"/>
+                <field name="reopen_count"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_global_click oe_kanban_card border-start border-4 #{record.severity.raw_value == 'critical' ? 'border-danger' : record.severity.raw_value == 'high' ? 'border-warning' : record.severity.raw_value == 'medium' ? 'border-info' : 'border-secondary'}">
+                            <div class="o_kanban_record_top mb-1">
+                                <strong class="o_kanban_record_title"><field name="name"/></strong>
+                            </div>
+                            <div class="small text-muted"><field name="issue_type"/> · <field name="severity"/></div>
+                            <div class="mt-1"><field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/></div>
+                            <div class="small mt-1">
+                                <field name="occurrence_count"/> × · slowest <field name="max_duration_s"/> s
+                                <t t-if="record.reopen_count.raw_value"> · <span class="text-danger">reopened</span></t>
+                                <t t-if="record.ai_state.raw_value == 'done'"> · <i class="fa fa-magic" title="AI advice"/></t>
+                            </div>
+                            <div class="small text-muted" t-if="record.last_seen_hint.raw_value"><field name="last_seen_hint"/></div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="perf_issue_view_form" model="ir.ui.view">
+        <field name="name">perf.issue.form</field>
+        <field name="model">perf.issue</field>
+        <field name="arch" type="xml">
+            <form string="Issue" create="false">
+                <header>
+                    <button name="action_close" type="object" string="Close" class="btn-primary"
+                            groups="perf_monitor.group_perf_manager" attrs="{'invisible': [('state', '=', 'closed')]}"/>
+                    <button name="action_open" type="object" string="Reopen"
+                            groups="perf_monitor.group_perf_manager" attrs="{'invisible': [('state', 'not in', ('closed', 'skipped'))]}"/>
+                    <button name="action_skip" type="object" string="Skip"
+                            groups="perf_monitor.group_perf_manager" attrs="{'invisible': [('state', 'in', ('closed', 'skipped'))]}"/>
+                    <button name="action_refresh_explain" type="object" string="Refresh EXPLAIN"
+                            groups="perf_monitor.group_perf_manager"/>
+                    <button name="action_ai_reanalyse" type="object" string="Re-analyse (AI)"
+                            groups="perf_monitor.group_perf_manager"
+                            confirm="Send this issue (SQL without literal values, plan, table sizes, code of the method) to Amazon Bedrock with the AI model chosen in the AI advice tab? The AI may read more code of this server's addons (read-only). It counts against the AI limits."/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,open,closed"/>
+                </header>
+                <sheet>
+                    <field name="call_group_count" invisible="1"/>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_slow_calls" type="object" class="oe_stat_button" icon="fa-hourglass-half">
+                            <field name="slow_call_count" widget="statinfo" string="Slow calls"/>
+                        </button>
+                    </div>
+                    <div class="alert alert-secondary mb-2" role="status" attrs="{'invisible': [('last_seen_hint', '=', False)]}">
+                        <i class="fa fa-clock-o" title="Last seen"/> <field name="last_seen_hint" class="oe_inline"/> - close it if it is fixed.
+                    </div>
+                    <div class="alert alert-warning mb-2" role="status" attrs="{'invisible': [('state', '!=', 'skipped')]}">
+                        <i class="fa fa-eye-slash" title="Skipped"/> Skipped by <field name="skip_rule_id" class="oe_inline"/>:
+                        new slow calls are stored but make no activity until the rule expires.
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                        <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}" readonly="1"/>
+                    </div>
+                    <div class="row g-2 mb-3" name="summary">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card h-100"><div class="card-body p-2">
+                                <div class="text-muted small text-uppercase">What / Kya</div>
+                                <div><field name="issue_type" class="oe_inline"/></div>
+                                <div><field name="severity" widget="badge" class="oe_inline"
+                                            decoration-danger="severity == 'critical'" decoration-warning="severity == 'high'"
+                                            decoration-info="severity == 'medium'"/>
+                                    <span class="text-muted small"> score <field name="severity_score" class="oe_inline"/></span></div>
+                                <div class="small">Assigned: <field name="user_id" class="oe_inline" widget="many2one_avatar_user"/></div>
+                            </div></div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card h-100"><div class="card-body p-2">
+                                <div class="text-muted small text-uppercase">Where / Kahan</div>
+                                <div attrs="{'invisible': [('model_name', '=', False)]}"><field name="model_name" class="oe_inline"/>.<field name="method" class="oe_inline"/></div>
+                                <div attrs="{'invisible': [('cron_name', '=', False)]}">Cron: <field name="cron_name" class="oe_inline"/></div>
+                                <div attrs="{'invisible': [('route', '=', False)]}"><field name="route" class="oe_inline"/></div>
+                                <div attrs="{'invisible': [('dashboard', '=', False)]}"><field name="dashboard" class="oe_inline"/> &gt; <field name="tile" class="oe_inline"/></div>
+                                <div class="small text-muted" attrs="{'invisible': [('menu', '=', False)]}">Menu: <field name="menu" class="oe_inline"/></div>
+                            </div></div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card h-100"><div class="card-body p-2">
+                                <div class="text-muted small text-uppercase">How bad / Kitna slow</div>
+                                <div class="fs-4 fw-bold"><field name="max_duration_s" class="oe_inline"/> s <span class="fs-6 fw-normal text-muted">slowest</span></div>
+                                <div class="small">average <field name="avg_duration_s" class="oe_inline"/> s · SQL <field name="sql_s" class="oe_inline"/> s</div>
+                                <div class="small">max <field name="max_sql_count" class="oe_inline"/> SQL / call · same SQL x<field name="max_repeats" class="oe_inline"/></div>
+                            </div></div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="card h-100"><div class="card-body p-2">
+                                <div class="text-muted small text-uppercase">How often / Kitni dafa</div>
+                                <div class="fs-4 fw-bold"><field name="occurrence_count" class="oe_inline"/> <span class="fs-6 fw-normal text-muted">times</span></div>
+                                <div class="small"><field name="count_7d" class="oe_inline"/> in the last 7 days</div>
+                                <div class="small text-muted">last <field name="last_seen" class="oe_inline"/></div>
+                            </div></div>
+                        </div>
+                    </div>
+                    <notebook>
+                        <page string="Overview / Khulasa" name="overview">
+                            <group string="In plain words (English / Roman Urdu)" name="explanation">
+                                <field name="explanation" nolabel="1" colspan="2"/>
+                            </group>
+                            <group>
+                                <group string="Rule hits">
+                                    <field name="severity_reasons" nolabel="1" colspan="2"/>
+                                </group>
+                                <group string="Details">
+                                    <field name="users"/>
+                                    <field name="screen"/>
+                                    <field name="first_seen"/>
+                                    <field name="server_ids" widget="many2many_tags" readonly="1"/>
+                                    <field name="key"/>
+                                    <field name="fingerprint" groups="base.group_no_one"/>
+                                    <field name="reopen_count"/>
+                                    <field name="closed_date" attrs="{'invisible': [('closed_date', '=', False)]}"/>
+                                    <field name="closed_by" attrs="{'invisible': [('closed_by', '=', False)]}"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Evidence / Saboot" name="evidence">
+                            <div attrs="{'invisible': [('call_group_count', '&lt;', 2)]}" class="mb-3">
+                                <div class="alert alert-info mb-1" role="status">This issue merges calls with different
+                                    sources (DB / model.method / cron / route / user / call site): check each group separately.</div>
+                                <field name="call_breakdown" nolabel="1"/>
+                            </div>
+                            <group string="Top SQL pattern (literal values removed)">
+                                <field name="top_sql" nolabel="1" colspan="2" widget="ace" options="{'mode': 'text'}"/>
+                                <field name="top_sql_s"/>
+                                <field name="sql_s"/>
+                                <field name="top_sql_fingerprint"/>
+                                <field name="seq_scan_tables"/>
+                            </group>
+                            <group string="EXPLAIN (generic plan, no ANALYZE)">
+                                <field name="explain_plan" nolabel="1" colspan="2" widget="ace" options="{'mode': 'text'}"/>
+                            </group>
+                            <field name="slow_call_ids" readonly="1">
+                                <tree limit="20">
+                                    <field name="ts"/>
+                                    <field name="db_name"/>
+                                    <field name="duration_s"/>
+                                    <field name="kind"/>
+                                    <field name="login"/>
+                                    <field name="model_name" optional="show"/>
+                                    <field name="method" optional="show"/>
+                                    <field name="cron_name" optional="hide"/>
+                                    <field name="ui_dashboard" optional="hide"/>
+                                    <field name="ui_tile" optional="hide"/>
+                                    <field name="sql_count"/>
+                                    <field name="sql_s" optional="show"/>
+                                    <field name="top_sql_calls"/>
+                                    <field name="top_sql_s"/>
+                                    <field name="top_sql_callsite" optional="show"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Code" name="code" groups="perf_monitor.group_perf_manager">
+                            <group>
+                                <field name="callsite"/>
+                            </group>
+                            <p class="text-muted small">The whole method around the call site plus its class header (_name / _inherit),
+                                read from this server's addons. May be incomplete ([TRUNCATED]) or differ from the source DB's code.</p>
+                            <field name="code_context" nolabel="1" widget="ace" options="{'mode': 'python'}" readonly="1"/>
+                        </page>
+                        <page string="AI advice (may be wrong, verify)" name="ai">
+                            <div class="alert alert-warning mb-2" role="status">
+                                <strong>AI advice, may be wrong, verify.</strong> AI ki salah hai, ghalat ho sakti hai: khud check karen.
+                                Nothing is applied automatically, indexes are never created by Perf Monitor.
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center mb-3" style="gap: 10px;" groups="perf_monitor.group_perf_manager">
+                                <span class="fw-bold">AI model:</span>
+                                <field name="ai_model_id" nolabel="1" options="{'no_create': True, 'no_open': True}"
+                                       placeholder="Settings default" class="oe_inline" style="min-width: 220px;"/>
+                                <button name="action_ai_reanalyse" type="object" string="Analyse with this model" icon="fa-magic"
+                                        class="btn-primary"
+                                        confirm="Send this issue (SQL without literal values, plan, table sizes, code of the method) to Amazon Bedrock with the AI model chosen here? The AI may read more code of this server's addons (read-only). It counts against the AI limits."/>
+                                <span class="text-muted small">Empty = default model of Settings. The model is also used by Re-analyse (AI) in the header.</span>
+                            </div>
+                            <group>
+                                <group>
+                                    <field name="ai_state" widget="badge" decoration-success="ai_state == 'done'"
+                                           decoration-warning="ai_state == 'limit'" decoration-danger="ai_state == 'error'"/>
+                                    <field name="ai_date"/>
+                                    <field name="ai_model"/>
+                                    <field name="ai_calls_today"/>
+                                </group>
+                                <group>
+                                    <field name="ai_last_model"/>
+                                    <field name="ai_tokens_in"/>
+                                    <field name="ai_tokens_out"/>
+                                    <field name="ai_cost_usd"/>
+                                </group>
+                                <group>
+                                    <field name="ai_error" attrs="{'invisible': [('ai_error', '=', False)]}"/>
+                                    <field name="ai_feedback"/>
+                                    <field name="ai_feedback_by" attrs="{'invisible': [('ai_feedback_by', '=', False)]}"/>
+                                    <field name="ai_feedback_note" attrs="{'invisible': [('ai_feedback_note', '=', False)]}" readonly="1"/>
+                                </group>
+                            </group>
+                            <group string="Raw answer (not valid JSON / stopped: limit reached / error)" attrs="{'invisible': [('ai_partial', '=', False)]}">
+                                <div colspan="2" class="font-monospace small" style="white-space: pre-wrap; max-height: 60vh; overflow: auto;">
+                                    <field name="ai_partial" nolabel="1"/>
+                                </div>
+                            </group>
+                            <div attrs="{'invisible': [('ai_state', '!=', 'done')]}">
+                                <group string="Explanation (English)"><field name="ai_explanation_en" nolabel="1" colspan="2"/></group>
+                                <group string="Wazahat (Roman Urdu)"><field name="ai_explanation_ur" nolabel="1" colspan="2"/></group>
+                                <group string="Root cause / Asal wajah"><field name="ai_root_cause" nolabel="1" colspan="2"/></group>
+                                <group string="Suggested fix / Mumkina hal"><field name="ai_fix" nolabel="1" colspan="2" widget="ace" options="{'mode': 'text'}"/></group>
+                                <group string="Suggested index (run by hand only if you agree)">
+                                    <field name="ai_index_sql" nolabel="1" colspan="2" widget="ace" options="{'mode': 'text'}"/>
+                                    <field name="ai_index_justification" nolabel="1" colspan="2"/>
+                                </group>
+                                <group>
+                                    <group string="Expected impact"><field name="ai_expected_impact" nolabel="1" colspan="2"/></group>
+                                    <group string="Risk"><field name="ai_risk" nolabel="1" colspan="2"/></group>
+                                </group>
+                                <div groups="perf_monitor.group_perf_manager" class="mt-2">
+                                    <button name="action_ai_feedback_correct" type="object" string="AI solution was right" class="btn-success me-2" icon="fa-thumbs-up"/>
+                                    <button name="action_ai_lesson_wizard" type="object" string="AI solution was wrong" class="btn-danger" icon="fa-thumbs-down"/>
+                                    <span class="text-muted small ms-2">Wrong: write a one-line lesson, it is given to the AI and to Claude Code for similar issues.</span>
+                                </div>
+                            </div>
+                        </page>
+                        <page string="Input sent to AI" name="ai_input">
+                            <p class="text-muted small">Exactly what the latest analysis sent to Amazon Bedrock: the system prompt, the
+                                issue context (SQL literal values removed, values of the monitored databases framed as untrusted data) and,
+                                per round, the tool calls and results (each clipped to 20,000 characters). Chat calls and older calls:
+                                open a row of the "AI calls" tab.</p>
+                            <field name="ai_input_html" nolabel="1"/>
+                        </page>
+                        <page string="AI Chat" name="ai_chat" groups="perf_monitor.group_perf_manager">
+                            <!-- chat panel: classes in static/src/scss/perf_chat.scss; static/src/js/perf_chat.js adds
+                                 Enter to send, auto-grow, scroll to the last message (the buttons work without it) -->
+                            <div class="o_perf_chat_panel">
+                                <div class="o_perf_chat_topbar">
+                                    <button name="action_ai_chat_new" type="object" string="New chat" icon="fa-plus"
+                                            class="btn-primary o_perf_chat_new" title="Start a fresh chat (the issue context is always sent)"/>
+                                    <field name="ai_chat_session_id" nolabel="1" class="o_perf_chat_select"
+                                           options="{'no_create': True, 'no_open': True}" placeholder="Previous chats"/>
+                                    <field name="ai_chat_model_id" nolabel="1" class="o_perf_chat_select"
+                                           options="{'no_create': True, 'no_open': True}" placeholder="Model: AI model of the issue"/>
+                                    <div class="o_perf_chat_toggle" title="On: the earlier answers of this chat are sent with the question">
+                                        <field name="ai_chat_use_history" nolabel="1" widget="boolean_toggle"/>
+                                        <label for="ai_chat_use_history" string="History" class="mb-0"/>
+                                    </div>
+                                    <div class="o_perf_chat_usage" title="Chat usage of this issue (all chats)">
+                                        <field name="ai_chat_usage" class="oe_inline"/>
+                                    </div>
+                                </div>
+                                <div class="o_perf_chat_disclaimer">AI advice, may be wrong, verify. Only questions about this issue. / Sirf is issue ke baare mein.</div>
+                                <div class="o_perf_chat_scroll">
+                                    <div class="o_perf_chat_column">
+                                        <field name="ai_chat_html" nolabel="1"/>
+                                        <div class="o_perf_chat_pending d-none" aria-live="polite"/>
+                                    </div>
+                                </div>
+                                <div class="o_perf_chat_footer">
+                                    <div class="o_perf_chat_inputbox">
+                                        <field name="ai_chat_draft" nolabel="1" class="o_perf_chat_composer"
+                                               placeholder="Ask about this issue... / Is issue ke baare mein poochen"/>
+                                        <button name="action_ai_chat_send" type="object" icon="fa-arrow-up"
+                                                class="btn-primary o_perf_chat_send" title="Send (Enter). Shift+Enter: new line"/>
+                                    </div>
+                                    <div class="o_perf_chat_hint" title="Short follow-ups (&quot;aur samjhao&quot;, &quot;why?&quot;) use the earlier answers when History is on. New chat starts a fresh context; older chats stay in Previous chats. A refused question stays in the box.">
+                                        Enter to send, Shift+Enter for a new line. A refused question stays in the box.
+                                    </div>
+                                </div>
+                            </div>
+                        </page>
+                        <page string="Claude Code Prompt" name="claude_prompt" groups="perf_monitor.group_perf_manager">
+                            <p class="text-muted small">Paste this into Claude Code (Opus) on your machine, inside the repository checkout.
+                                SQL literal values are removed; the code and the AI suggestion are marked as unverified.</p>
+                            <div class="d-flex align-items-center mb-2" style="gap: 10px;">
+                                <field name="claude_code_prompt" widget="CopyClipboardButton" readonly="1" nolabel="1"/>
+                                <span class="text-muted">Full prompt, read-only: <field name="claude_code_prompt_size" class="oe_inline"/></span>
+                            </div>
+                            <field name="claude_code_prompt_html" nolabel="1" class="o_perf_claude_prompt"/>
+                        </page>
+                        <page string="AI calls" name="ai_calls">
+                            <p class="text-muted small">Every AI call of this issue (analysis and chat). Open a row to see exactly what was
+                                sent (system prompt, prompt / conversation, tool rounds).</p>
+                            <field name="ai_call_ids" readonly="1">
+                                <tree decoration-danger="status == 'error'" decoration-warning="status == 'limit'">
+                                    <field name="create_date"/>
+                                    <field name="trigger"/>
+                                    <field name="status"/>
+                                    <field name="model_id"/>
+                                    <field name="rounds" optional="show"/>
+                                    <field name="files_read" optional="hide"/>
+                                    <field name="estimated_input_tokens" optional="hide"/>
+                                    <field name="input_tokens" sum="Total"/>
+                                    <field name="output_tokens" sum="Total"/>
+                                    <field name="cost_usd" sum="Total"/>
+                                    <field name="duration_s" optional="show"/>
+                                    <field name="error"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="perf_issue_view_search" model="ir.ui.view">
+        <field name="name">perf.issue.search</field>
+        <field name="model">perf.issue</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="tag_ids"/>
+                <field name="model_name"/>
+                <field name="dashboard"/>
+                <field name="tile"/>
+                <field name="callsite"/>
+                <field name="user_id"/>
+                <filter name="my_issues" string="My Issues" domain="[('user_id', '=', uid)]"/>
+                <separator/>
+                <filter name="not_closed" string="Not closed / skipped" domain="[('state', 'not in', ('closed', 'skipped'))]"/>
+                <filter name="closed" string="Closed" domain="[('state', '=', 'closed')]"/>
+                <filter name="skipped" string="Skipped" domain="[('state', '=', 'skipped')]"/>
+                <separator/>
+                <filter name="critical_high" string="Critical / High" domain="[('severity', 'in', ('critical', 'high'))]"/>
+                <filter name="n_plus_1" string="N+1" domain="[('issue_type', '=', 'n_plus_1')]"/>
+                <filter name="tiles" string="Dashboard tiles" domain="[('issue_type', '=', 'slow_tile')]"/>
+                <filter name="reopened" string="Reopened" domain="[('reopen_count', '>', 0)]"/>
+                <separator/>
+                <filter name="slower_10s" string="Slowest call > 10 s" domain="[('max_duration_ms', '>', 10000)]"/>
+                <filter name="slower_60s" string="Slowest call > 60 s" domain="[('max_duration_ms', '>', 60000)]"/>
+                <separator/>
+                <filter name="ai_done" string="AI analysed" domain="[('ai_state', '=', 'done')]"/>
+                <filter name="ai_limit" string="AI limit reached" domain="[('ai_state', '=', 'limit')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="group_severity" string="Severity" context="{'group_by': 'severity'}"/>
+                    <filter name="group_type" string="Type" context="{'group_by': 'issue_type'}"/>
+                    <filter name="group_dashboard" string="Dashboard" context="{'group_by': 'dashboard'}"/>
+                    <filter name="group_user" string="Assigned to" context="{'group_by': 'user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_issue" model="ir.actions.act_window">
+        <field name="name">Issues</field>
+        <field name="res_model">perf.issue</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="context">{'search_default_not_closed': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No performance issue yet</p>
+            <p>Issues are built by rules from the slow calls pushed by perf_monitor_agent (cron "Perf Monitor: build issues" and after every push).</p>
+        </field>
+    </record>
+
+    <record id="action_perf_issue_my" model="ir.actions.act_window">
+        <field name="name">My Issues</field>
+        <field name="res_model">perf.issue</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="context">{'search_default_my_issues': 1, 'search_default_not_closed': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No performance issue assigned to you</p>
+            <p>New and reopened issues are assigned to the Settings "Issue assignee" with a To-Do activity. All issues: Performance &gt; Issues.</p>
+        </field>
+    </record>
+
+    <record id="perf_ai_call_view_tree" model="ir.ui.view">
+        <field name="name">perf.ai.call.tree</field>
+        <field name="model">perf.ai.call</field>
+        <field name="arch" type="xml">
+            <tree string="AI calls" create="false" edit="false" delete="false" decoration-danger="status == 'error'" decoration-warning="status == 'limit'">
+                <field name="create_date"/>
+                <field name="issue_id"/>
+                <field name="trigger"/>
+                <field name="status"/>
+                <field name="model_id"/>
+                <field name="ai_model_id" optional="hide"/>
+                <field name="region" optional="hide"/>
+                <field name="price_input_mtok" optional="hide"/>
+                <field name="price_output_mtok" optional="hide"/>
+                <field name="estimated_input_tokens" optional="hide"/>
+                <field name="rounds" optional="show"/>
+                <field name="files_read" optional="show"/>
+                <field name="files" optional="hide"/>
+                <field name="input_tokens" sum="Total"/>
+                <field name="output_tokens" sum="Total"/>
+                <field name="cost_usd" sum="Total"/>
+                <field name="duration_s"/>
+                <field name="error" optional="show"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_ai_call_view_form" model="ir.ui.view">
+        <field name="name">perf.ai.call.form</field>
+        <field name="model">perf.ai.call</field>
+        <field name="arch" type="xml">
+            <form string="AI call" create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="create_date"/>
+                            <field name="issue_id"/>
+                            <field name="trigger"/>
+                            <field name="status"/>
+                            <field name="error" attrs="{'invisible': [('error', '=', False)]}"/>
+                            <field name="duration_s"/>
+                        </group>
+                        <group>
+                            <field name="model_id"/>
+                            <field name="ai_model_id"/>
+                            <field name="region"/>
+                            <field name="price_input_mtok"/>
+                            <field name="price_output_mtok"/>
+                            <field name="estimated_input_tokens"/>
+                            <field name="estimate_method"/>
+                            <field name="input_tokens"/>
+                            <field name="output_tokens"/>
+                            <field name="cost_usd"/>
+                            <field name="rounds"/>
+                            <field name="tool_calls"/>
+                            <field name="files_read"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Input sent to AI" name="input">
+                            <field name="input_html" nolabel="1"/>
+                        </page>
+                        <page string="Files read" name="files">
+                            <field name="files" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_perf_ai_call" model="ir.actions.act_window">
+        <field name="name">AI calls</field>
+        <field name="res_model">perf.ai.call</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="action_perf_settings" model="ir.actions.act_window">
+        <field name="name">Settings</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+        <field name="context">{'module': 'perf_monitor', 'bin_size': False}</field>
+    </record>
+</odoo>

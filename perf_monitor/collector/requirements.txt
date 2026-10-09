@@ -1,0 +1,2 @@
+psycopg2-binary>=2.8
+# Optional: psutil>=5.6  (without it the collector parses /proc and os.statvfs)

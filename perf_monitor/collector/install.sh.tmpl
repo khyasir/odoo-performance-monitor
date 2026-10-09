@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Perf Monitor collector installer - rendered by the central Odoo (perf_monitor @@COLLECTOR_VERSION@@).
+# Usage (the token goes in a header, never in the URL; use the exact one-liner shown by the Add Server wizard):
+#   curl --proto '=https' --tlsv1.2 -fsS -b <cookie jar> -H 'X-Perf-Token: <token>' '<central>/perf_monitor/collector/install.sh?db=<db>' \
+#     | sudo PERF_PG_DSN='host=... dbname=... user=perf_monitor_ro password=... sslmode=require' bash
+set -Eeuo pipefail
+
+CENTRAL_URL='@@CENTRAL_URL@@'
+CENTRAL_DB='@@CENTRAL_DB@@'
+TOKEN='@@TOKEN@@'
+COLLECTOR_DIR="${COLLECTOR_DIR:-/opt/perf-monitor-collector}"
+CONF_DIR="${CONF_DIR:-/etc/perf-monitor}"
+CONF="$CONF_DIR/collector.conf"
+STATE_DIR=/var/lib/perf-monitor
+UNIT=/etc/systemd/system/perf-monitor-collector.service
+PERF_USER=perfmon
+
+log() { printf '[perf-monitor] %s\n' "$*"; }
+die() { printf '[perf-monitor] ERROR: %s\n' "$*" >&2; exit 1; }
+
+# the token travels on every push: https only, plain http only to a collector on the central host itself
+case "$CENTRAL_URL" in
+    https://*) CURL_TLS=(--proto '=https' --tlsv1.2) ;;
+    http://127.0.0.1|http://127.0.0.1[:/]*|http://localhost|http://localhost[:/]*|http://\[::1\]|http://\[::1\][:/]*)
+        CURL_TLS=() ;;
+    *) die "CENTRAL_URL must be https:// (plain http:// only for 127.0.0.1, [::1] or localhost): $CENTRAL_URL" ;;
+esac
+
+[ "$(id -u)" -eq 0 ] || die "must run as root (pipe into 'sudo bash')"
+[ -n "${PERF_PG_DSN:-}" ] || die "PERF_PG_DSN is required, e.g. PERF_PG_DSN='host=<db_host> dbname=<db> user=perf_monitor_ro password=...'"
+case "$PERF_PG_DSN" in *CHANGE_ME*) die "PERF_PG_DSN still contains CHANGE_ME: set the perf_monitor_ro password";; esac
+command -v python3 >/dev/null || die "python3 not found"
+command -v curl >/dev/null || die "curl not found"
+command -v systemctl >/dev/null || die "systemd is required"
+
+log "creating system user $PERF_USER"
+id "$PERF_USER" >/dev/null 2>&1 || useradd --system --no-create-home --home-dir /nonexistent \
+    --shell /usr/sbin/nologin "$PERF_USER"
+install -d -m 0755 "$COLLECTOR_DIR"
+install -d -m 0750 -o root -g "$PERF_USER" "$CONF_DIR"
+install -d -m 0750 -o "$PERF_USER" -g "$PERF_USER" "$STATE_DIR"
+
+log "creating virtualenv in $COLLECTOR_DIR/venv"
+if [ ! -x "$COLLECTOR_DIR/venv/bin/python" ]; then
+    python3 -m venv "$COLLECTOR_DIR/venv" || die "python3 -m venv failed (install python3-venv)"
+fi
+"$COLLECTOR_DIR/venv/bin/pip" install -q --upgrade pip >/dev/null 2>&1 || true
+"$COLLECTOR_DIR/venv/bin/pip" install -q psycopg2-binary || die "pip install psycopg2-binary failed"
+"$COLLECTOR_DIR/venv/bin/pip" install -q psutil || log "psutil not installed (optional, /proc fallback is used)"
+
+log "downloading collector from $CENTRAL_URL"
+JAR="$(mktemp)"; TMP_PY="$(mktemp)"
+trap 'rm -f "$JAR" "$TMP_PY"' EXIT
+# pin the central DB in a session cookie: auth='none' routes only resolve once a DB is selected
+curl ${CURL_TLS[@]+"${CURL_TLS[@]}"} -sS -o /dev/null -c "$JAR" -b "$JAR" "$CENTRAL_URL/web?db=$CENTRAL_DB" || true
+curl ${CURL_TLS[@]+"${CURL_TLS[@]}"} -fsS -b "$JAR" -H "X-Perf-Token: $TOKEN" -o "$TMP_PY" \
+    "$CENTRAL_URL/perf_monitor/collector/perf_collector.py?db=$CENTRAL_DB" \
+    || die "download of perf_collector.py failed"
+"$COLLECTOR_DIR/venv/bin/python" -m py_compile "$TMP_PY" || die "downloaded collector does not compile"
+install -m 0755 "$TMP_PY" "$COLLECTOR_DIR/perf_collector.py"
+
+log "writing $CONF"
+umask 027
+[ -f "$CONF" ] && cp -p "$CONF" "$CONF.bak-$(date +%Y%m%d%H%M%S)"
+cat > "$CONF.new" <<CONF
+[collector]
+central_url = $CENTRAL_URL
+central_db = $CENTRAL_DB
+token = $TOKEN
+pg_dsn = $PERF_PG_DSN
+spool_path = $STATE_DIR/spool.db
+state_path = $STATE_DIR/state.json
+spool_max_mb = 50
+
+[thresholds]
+CONF
+chown root:"$PERF_USER" "$CONF.new"
+chmod 0640 "$CONF.new"
+mv -f "$CONF.new" "$CONF"
+
+log "installing systemd unit"
+cat > "$UNIT" <<'UNIT_EOF'
+@@SYSTEMD_UNIT@@
+UNIT_EOF
+if [ "$COLLECTOR_DIR" != "/opt/perf-monitor-collector" ]; then
+    sed -i "s#/opt/perf-monitor-collector#$COLLECTOR_DIR#g" "$UNIT"
+fi
+systemctl daemon-reload
+
+log "test run (--once)"
+if runuser -u "$PERF_USER" -- "$COLLECTOR_DIR/venv/bin/python" "$COLLECTOR_DIR/perf_collector.py" --once --config "$CONF"; then
+    log "test push OK"
+else
+    log "WARNING: test push failed (payload spooled); check 'journalctl -u perf-monitor-collector' after start"
+fi
+systemctl enable --now perf-monitor-collector.service
+if systemctl is-active --quiet perf-monitor-collector.service; then
+    log "collector running"
+else
+    die "collector did not start"
+fi
+log "done. The server card turns green within ~2 minutes."

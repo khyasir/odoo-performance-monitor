@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_agent_slow_call_remote_view_tree" model="ir.ui.view">
+        <field name="name">perf.agent.slow.call.remote.tree</field>
+        <field name="model">perf.agent.slow.call.remote</field>
+        <field name="arch" type="xml">
+            <tree string="Slow Calls" create="false" edit="false" decoration-danger="error">
+                <field name="ts"/>
+                <field name="server_id" optional="show"/>
+                <field name="db_name"/>
+                <field name="duration_s"/>
+                <field name="duration_ms" optional="hide" string="Duration (ms, sortable)"/>
+                <field name="kind"/>
+                <field name="login"/>
+                <field name="user_name" optional="show"/>
+                <field name="ui_dashboard" optional="show"/>
+                <field name="ui_menu" optional="show"/>
+                <field name="ui_tile" optional="show"/>
+                <field name="ui_tile_type" optional="hide"/>
+                <field name="tile_s" optional="show"/>
+                <field name="ui_action" optional="show"/>
+                <field name="ui_model" optional="hide"/>
+                <field name="ui_record_id" optional="hide"/>
+                <field name="ui_summary" optional="hide"/>
+                <field name="model_name"/>
+                <field name="method"/>
+                <field name="route" optional="show"/>
+                <field name="cron_name" optional="hide"/>
+                <field name="sql_count"/>
+                <field name="sql_s" optional="show"/>
+                <field name="top_sql_s" optional="show"/>
+                <field name="top_sql_callsite" optional="show"/>
+                <field name="top_sql_fingerprint" optional="hide"/>
+                <field name="error" optional="hide"/>
+                <field name="issue_id" optional="hide"/>
+                <field name="skip_rule_id" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_agent_slow_call_remote_view_form" model="ir.ui.view">
+        <field name="name">perf.agent.slow.call.remote.form</field>
+        <field name="model">perf.agent.slow.call.remote</field>
+        <field name="arch" type="xml">
+            <form string="Slow Call" create="false" edit="false">
+                <sheet>
+                    <div class="oe_title">
+                        <h2><field name="ui_summary"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="server_id"/>
+                            <field name="db_name"/>
+                            <field name="ts"/>
+                            <field name="duration_s"/>
+                            <field name="kind"/>
+                            <field name="uid"/>
+                            <field name="login"/>
+                            <field name="user_name"/>
+                            <field name="error"/>
+                        </group>
+                        <group>
+                            <field name="model_name"/>
+                            <field name="method"/>
+                            <field name="route"/>
+                            <field name="cron_name"/>
+                            <field name="app_name"/>
+                            <field name="sql_count"/>
+                            <field name="sql_s"/>
+                            <field name="agent_id"/>
+                        </group>
+                    </group>
+                    <group string="UI context (screen the user was on)">
+                        <group>
+                            <field name="ui_dashboard"/>
+                            <field name="ui_dashboard_model"/>
+                            <field name="ui_dashboard_id"/>
+                            <field name="ui_menu"/>
+                            <field name="ui_menu_id"/>
+                            <field name="ui_tile"/>
+                            <field name="ui_tile_id"/>
+                            <field name="ui_tile_type"/>
+                        </group>
+                        <group>
+                            <field name="ui_action"/>
+                            <field name="ui_action_id"/>
+                            <field name="ui_model"/>
+                            <field name="ui_record_id"/>
+                            <field name="ui_view_type"/>
+                            <field name="tile_s"/>
+                            <field name="tile_count"/>
+                            <field name="parent_id"/>
+                        </group>
+                    </group>
+                    <group string="Tiles computed by this call (slowest first)" attrs="{'invisible': [('tile_ids', '=', [])]}">
+                        <field name="tile_ids" nolabel="1" colspan="2">
+                            <tree default_order="duration_ms desc">
+                                <field name="ui_tile"/>
+                                <field name="ui_tile_id"/>
+                                <field name="ui_tile_type"/>
+                                <field name="duration_s"/>
+                                <field name="sql_count"/>
+                                <field name="sql_s"/>
+                                <field name="top_sql_s"/>
+                                <field name="top_sql_fingerprint" optional="hide"/>
+                                <field name="top_sql_callsite"/>
+                            </tree>
+                        </field>
+                    </group>
+                    <group string="Top SQL (most total time in this call)">
+                        <field name="top_sql_s"/>
+                        <field name="top_sql_calls"/>
+                        <field name="top_sql_callsite"/>
+                        <field name="top_sql_fingerprint"/>
+                    </group>
+                    <field name="top_sql" widget="code" options="{'mode': 'sql'}"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="perf_agent_slow_call_remote_view_search" model="ir.ui.view">
+        <field name="name">perf.agent.slow.call.remote.search</field>
+        <field name="model">perf.agent.slow.call.remote</field>
+        <field name="arch" type="xml">
+            <search string="Slow Calls">
+                <field name="db_name"/>
+                <field name="ui_dashboard"/>
+                <field name="ui_menu"/>
+                <field name="ui_tile"/>
+                <field name="ui_action"/>
+                <field name="model_name"/>
+                <field name="method"/>
+                <field name="login"/>
+                <field name="user_name"/>
+                <field name="route"/>
+                <field name="top_sql_fingerprint"/>
+                <field name="server_id"/>
+                <filter name="dashboards" string="Dashboards" domain="[('ui_dashboard', '!=', False)]"/>
+                <filter name="tiles" string="Tile rows" domain="[('kind', '=', 'tile')]"/>
+                <filter name="calls" string="Calls (no tile rows)" domain="[('kind', '!=', 'tile')]"/>
+                <separator/>
+                <filter name="rpc" string="RPC" domain="[('kind', '=', 'rpc')]"/>
+                <filter name="http" string="HTTP" domain="[('kind', '=', 'http')]"/>
+                <filter name="cron" string="Cron" domain="[('kind', '=', 'cron')]"/>
+                <separator/>
+                <filter name="slower_10s" string="Slower than 10 s" domain="[('duration_ms', '>', 10000)]"/>
+                <filter name="slower_60s" string="Slower than 60 s" domain="[('duration_ms', '>', 60000)]"/>
+                <separator/>
+                <filter name="failed" string="Failed" domain="[('error', '!=', False)]"/>
+                <filter name="no_issue" string="Checked, no issue" domain="[('issue_checked', '=', True), ('issue_id', '=', False)]"/>
+                <filter name="skipped" string="Skipped by a rule" domain="[('skip_rule_id', '!=', False)]"/>
+                <separator/>
+                <filter name="ts" string="Date" date="ts"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_db" string="Database" context="{'group_by': 'db_name'}"/>
+                    <filter name="group_dashboard" string="Dashboard" context="{'group_by': 'ui_dashboard'}"/>
+                    <filter name="group_menu" string="Menu" context="{'group_by': 'ui_menu'}"/>
+                    <filter name="group_tile" string="Tile" context="{'group_by': 'ui_tile'}"/>
+                    <filter name="group_tile_type" string="Tile type" context="{'group_by': 'ui_tile_type'}"/>
+                    <filter name="group_action" string="Action" context="{'group_by': 'ui_action'}"/>
+                    <filter name="group_model" string="Model" context="{'group_by': 'model_name'}"/>
+                    <filter name="group_method" string="Method" context="{'group_by': 'method'}"/>
+                    <filter name="group_login" string="User" context="{'group_by': 'login'}"/>
+                    <filter name="group_user_name" string="User name" context="{'group_by': 'user_name'}"/>
+                    <filter name="group_fingerprint" string="SQL fingerprint" context="{'group_by': 'top_sql_fingerprint'}"/>
+                    <filter name="group_ts" string="Day" context="{'group_by': 'ts:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_agent_slow_call_remote" model="ir.actions.act_window">
+        <field name="name">Slow Calls</field>
+        <field name="res_model">perf.agent.slow.call.remote</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">No slow call pushed yet by a perf_monitor_agent</p>
+            <p>Install perf_monitor_agent in a monitored database and point perf_monitor_agent.central_url /
+                central_token at this server (token of a server record).</p>
+        </field>
+    </record>
+</odoo>

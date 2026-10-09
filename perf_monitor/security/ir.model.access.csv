@@ -1,0 +1,27 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_perf_server_viewer,perf.server viewer,model_perf_server,group_perf_viewer,1,0,0,0
+access_perf_metric_viewer,perf.metric viewer,model_perf_metric,group_perf_viewer,1,0,0,0
+access_perf_sql_snapshot_viewer,perf.sql.snapshot viewer,model_perf_sql_snapshot,group_perf_viewer,1,0,0,0
+access_perf_live_query_viewer,perf.live.query viewer,model_perf_live_query,group_perf_viewer,1,0,0,0
+access_perf_server_manager,perf.server manager,model_perf_server,group_perf_manager,1,1,1,1
+access_perf_metric_manager,perf.metric manager,model_perf_metric,group_perf_manager,1,0,0,1
+access_perf_sql_snapshot_manager,perf.sql.snapshot manager,model_perf_sql_snapshot,group_perf_manager,1,0,0,1
+access_perf_live_query_manager,perf.live.query manager,model_perf_live_query,group_perf_manager,1,0,0,1
+access_perf_server_add_wizard_manager,perf.server.add.wizard manager,model_perf_server_add_wizard,group_perf_manager,1,1,1,1
+access_perf_agent_slow_call_remote_viewer,perf.agent.slow.call.remote viewer,model_perf_agent_slow_call_remote,group_perf_viewer,1,0,0,0
+access_perf_agent_slow_call_remote_manager,perf.agent.slow.call.remote manager,model_perf_agent_slow_call_remote,group_perf_manager,1,0,0,1
+access_perf_issue_viewer,perf.issue viewer,model_perf_issue,group_perf_viewer,1,0,0,0
+access_perf_issue_manager,perf.issue manager,model_perf_issue,group_perf_manager,1,1,1,1
+access_perf_issue_tag_viewer,perf.issue.tag viewer,model_perf_issue_tag,group_perf_viewer,1,0,0,0
+access_perf_issue_tag_manager,perf.issue.tag manager,model_perf_issue_tag,group_perf_manager,1,1,1,1
+access_perf_ai_call_viewer,perf.ai.call viewer,model_perf_ai_call,group_perf_viewer,1,0,0,0
+access_perf_skip_rule_viewer,perf.skip.rule viewer,model_perf_skip_rule,group_perf_viewer,1,0,0,0
+access_perf_skip_rule_manager,perf.skip.rule manager,model_perf_skip_rule,group_perf_manager,1,1,1,1
+access_perf_issue_skip_wizard_manager,perf.issue.skip.wizard manager,model_perf_issue_skip_wizard,group_perf_manager,1,1,1,1
+access_perf_ai_call_manager,perf.ai.call manager,model_perf_ai_call,group_perf_manager,1,0,0,0
+access_perf_ai_lesson_viewer,perf.ai.lesson viewer,model_perf_ai_lesson,group_perf_viewer,1,0,0,0
+access_perf_ai_lesson_manager,perf.ai.lesson manager,model_perf_ai_lesson,group_perf_manager,1,1,1,1
+access_perf_ai_lesson_wizard_manager,perf.ai.lesson.wizard manager,model_perf_ai_lesson_wizard,group_perf_manager,1,1,1,1
+access_perf_issue_chat_message_manager,perf.issue.chat.message manager,model_perf_issue_chat_message,group_perf_manager,1,0,1,0
+access_perf_ai_model_manager,perf.ai.model manager,model_perf_ai_model,group_perf_manager,1,1,1,1
+access_perf_issue_chat_session_manager,perf.issue.chat.session manager,model_perf_issue_chat_session,group_perf_manager,1,1,1,0

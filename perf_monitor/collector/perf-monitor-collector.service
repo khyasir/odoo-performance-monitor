@@ -1,0 +1,27 @@
+[Unit]
+Description=Perf Monitor collector agent (pushes OS / PostgreSQL stats to the central Odoo)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=perfmon
+Group=perfmon
+ExecStart=/opt/perf-monitor-collector/venv/bin/python /opt/perf-monitor-collector/perf_collector.py --config /etc/perf-monitor/collector.conf
+Restart=always
+RestartSec=15
+KillSignal=SIGTERM
+TimeoutStopSec=20
+Nice=10
+MemoryMax=128M
+CPUQuota=10%
+StateDirectory=perf-monitor
+StateDirectoryMode=0750
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/perf-monitor
+
+[Install]
+WantedBy=multi-user.target

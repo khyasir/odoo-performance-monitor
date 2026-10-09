@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_metric_view_tree" model="ir.ui.view">
+        <field name="name">perf.metric.tree</field>
+        <field name="model">perf.metric</field>
+        <field name="arch" type="xml">
+            <tree string="Metrics" create="false" edit="false">
+                <field name="ts"/>
+                <field name="server_id"/>
+                <field name="cpu_pct"/>
+                <field name="iowait_pct" optional="hide"/>
+                <field name="load1"/>
+                <field name="load5" optional="hide"/>
+                <field name="load15" optional="hide"/>
+                <field name="ram_pct"/>
+                <field name="ram_used_mb" optional="hide"/>
+                <field name="ram_total_mb" optional="hide"/>
+                <field name="swap_used_mb" optional="show"/>
+                <field name="disk_pct"/>
+                <field name="disk_used_gb" optional="hide"/>
+                <field name="disk_total_gb" optional="hide"/>
+                <field name="net_rx_kbps" optional="show"/>
+                <field name="net_tx_kbps" optional="show"/>
+                <field name="db_latency_ms"/>
+                <field name="pg_connections"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_metric_view_graph" model="ir.ui.view">
+        <field name="name">perf.metric.graph</field>
+        <field name="model">perf.metric</field>
+        <field name="arch" type="xml">
+            <graph string="CPU / RAM" type="line" sample="1">
+                <field name="ts" interval="day"/>
+                <field name="cpu_pct" type="measure"/>
+                <field name="ram_pct" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="perf_metric_view_pivot" model="ir.ui.view">
+        <field name="name">perf.metric.pivot</field>
+        <field name="model">perf.metric</field>
+        <field name="arch" type="xml">
+            <pivot string="Metrics">
+                <field name="server_id" type="row"/>
+                <field name="ts" interval="day" type="col"/>
+                <field name="cpu_pct" type="measure"/>
+                <field name="ram_pct" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="perf_metric_view_search" model="ir.ui.view">
+        <field name="name">perf.metric.search</field>
+        <field name="model">perf.metric</field>
+        <field name="arch" type="xml">
+            <search string="Metrics">
+                <field name="server_id"/>
+                <filter name="last_24h" string="Last 24 hours"
+                        domain="[('ts', '&gt;=', (context_today() - relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                <filter name="last_7d" string="Last 7 days"
+                        domain="[('ts', '&gt;=', (context_today() - relativedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <filter name="ts" string="Date" date="ts"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_server" string="Server" context="{'group_by': 'server_id'}"/>
+                    <filter name="group_ts" string="Day" context="{'group_by': 'ts:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_metric" model="ir.actions.act_window">
+        <field name="name">Metrics</field>
+        <field name="res_model">perf.metric</field>
+        <field name="view_mode">tree,graph,pivot</field>
+        <field name="context">{'search_default_last_24h': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">No metrics yet</p>
+            <p>Metrics are pushed every minute by the collector agent.</p>
+        </field>
+    </record>
+</odoo>

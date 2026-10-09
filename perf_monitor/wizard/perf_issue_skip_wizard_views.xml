@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_issue_skip_wizard_view_form" model="ir.ui.view">
+        <field name="name">perf.issue.skip.wizard.form</field>
+        <field name="model">perf.issue.skip.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Skip this slowness">
+                <p class="text-muted">Matching slow calls are still stored and counted on the rule, but they do not
+                    create, reopen or escalate an issue and make no activity until the rule expires.</p>
+                <group>
+                    <field name="issue_id" readonly="1" force_save="1"/>
+                    <field name="match_type"/>
+                    <field name="match_value" required="1"/>
+                    <field name="duration" widget="radio" options="{'horizontal': true}"/>
+                    <field name="reason" placeholder="Why is this slowness accepted for now?"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Skip" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

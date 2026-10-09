@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="lesson_inherit_base_write" model="perf.ai.lesson">
+        <field name="name">Generic write / create override on _inherit = 'base'</field>
+        <field name="sequence">1</field>
+        <field name="pattern">The call site is in write / create (or another generic hook) of a class with _inherit = 'base': the override runs for every write / create of every model.</field>
+        <field name="regex">_inherit\s*=\s*\[?\s*['"]base['"]</field>
+        <field name="keywords">BaseInheritApproval</field>
+        <field name="lesson">Callsite in write/create of an `_inherit = 'base'` class: the issue hits EVERY model. Fix = a tools.ormcache'd frozenset of the (small) list of relevant model names, `if self._name not in names: return super()...` first, and clear the cache (self.clear_caches()) when the config records change. Moving a search out of a loop is NOT the fix.</field>
+    </record>
+</odoo>

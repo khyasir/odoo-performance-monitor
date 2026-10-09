@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_live_query_view_tree" model="ir.ui.view">
+        <field name="name">perf.live.query.tree</field>
+        <field name="model">perf.live.query</field>
+        <field name="arch" type="xml">
+            <tree string="Live Queries" create="false" edit="false"
+                  decoration-danger="category == 'lock_wait'" decoration-warning="category == 'idle_in_tx'">
+                <field name="ts"/>
+                <field name="server_id"/>
+                <field name="category"/>
+                <field name="pid"/>
+                <field name="usename"/>
+                <field name="application_name" optional="show"/>
+                <field name="client_addr" optional="hide"/>
+                <field name="state"/>
+                <field name="wait_event_type" optional="show"/>
+                <field name="wait_event" optional="show"/>
+                <field name="xact_start" optional="hide"/>
+                <field name="query_start" optional="hide"/>
+                <field name="duration_s"/>
+                <field name="blocking_pids"/>
+                <field name="query"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_live_query_view_form" model="ir.ui.view">
+        <field name="name">perf.live.query.form</field>
+        <field name="model">perf.live.query</field>
+        <field name="arch" type="xml">
+            <form string="Live Query" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="server_id"/>
+                            <field name="ts"/>
+                            <field name="category"/>
+                            <field name="pid"/>
+                            <field name="blocking_pids"/>
+                            <field name="duration_s"/>
+                        </group>
+                        <group>
+                            <field name="usename"/>
+                            <field name="application_name"/>
+                            <field name="client_addr"/>
+                            <field name="state"/>
+                            <field name="wait_event_type"/>
+                            <field name="wait_event"/>
+                            <field name="xact_start"/>
+                            <field name="query_start"/>
+                        </group>
+                    </group>
+                    <field name="query" widget="code" options="{'mode': 'sql'}"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="perf_live_query_view_search" model="ir.ui.view">
+        <field name="name">perf.live.query.search</field>
+        <field name="model">perf.live.query</field>
+        <field name="arch" type="xml">
+            <search string="Live Queries">
+                <field name="query"/>
+                <field name="usename"/>
+                <field name="application_name"/>
+                <field name="server_id"/>
+                <filter name="long_running" string="Long running" domain="[('category', '=', 'long_running')]"/>
+                <filter name="lock_wait" string="Lock wait" domain="[('category', '=', 'lock_wait')]"/>
+                <filter name="idle_in_tx" string="Idle in transaction" domain="[('category', '=', 'idle_in_tx')]"/>
+                <separator/>
+                <filter name="ts" string="Date" date="ts"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_category" string="Category" context="{'group_by': 'category'}"/>
+                    <filter name="group_server" string="Server" context="{'group_by': 'server_id'}"/>
+                    <filter name="group_user" string="DB user" context="{'group_by': 'usename'}"/>
+                    <filter name="group_ts" string="Day" context="{'group_by': 'ts:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_live_query" model="ir.actions.act_window">
+        <field name="name">Live Queries</field>
+        <field name="res_model">perf.live.query</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">No long / blocked / idle-in-transaction queries recorded</p>
+        </field>
+    </record>
+</odoo>

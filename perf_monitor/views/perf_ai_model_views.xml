@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_ai_model_view_tree" model="ir.ui.view">
+        <field name="name">perf.ai.model.tree</field>
+        <field name="model">perf.ai.model</field>
+        <field name="arch" type="xml">
+            <tree string="AI models">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="bedrock_model_id"/>
+                <field name="region"/>
+                <field name="price_input_mtok"/>
+                <field name="price_output_mtok"/>
+                <field name="send_temperature"/>
+                <field name="active" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_ai_model_view_form" model="ir.ui.view">
+        <field name="name">perf.ai.model.form</field>
+        <field name="model">perf.ai.model</field>
+        <field name="arch" type="xml">
+            <form string="AI model">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Haiku 4.5"/></h1>
+                    </div>
+                    <group>
+                        <group string="Amazon Bedrock">
+                            <field name="bedrock_model_id"/>
+                            <field name="region"/>
+                            <field name="send_temperature"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group string="Prices (cost log, USD per 1M tokens)">
+                            <field name="price_input_mtok"/>
+                            <field name="price_output_mtok"/>
+                        </group>
+                    </group>
+                    <p class="text-muted small">Pick the default in Settings &gt; Performance &gt; Default AI model; each issue (and its
+                        chat) can use another model. Check the prices in the Bedrock price list of your region. Untick "Send
+                        temperature" for models that refuse it (Claude Opus 5.5).</p>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="perf_ai_model_view_search" model="ir.ui.view">
+        <field name="name">perf.ai.model.search</field>
+        <field name="model">perf.ai.model</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="bedrock_model_id"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_ai_model" model="ir.actions.act_window">
+        <field name="name">AI models</field>
+        <field name="res_model">perf.ai.model</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a Bedrock model</p>
+            <p>Model / inference profile id, region and prices of each model the AI analysis and the chat may use.</p>
+        </field>
+    </record>
+</odoo>

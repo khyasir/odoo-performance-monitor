@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- AI models (Configuration > AI models); prices = USD per million tokens (check the Bedrock price list of
+         your region). Opus 5.5 refuses the Converse temperature parameter ("temperature is deprecated for this
+         model"): send_temperature off. Existing installs: migrations/16.0.1.12.0 links the default to the old
+         perf_monitor.ai_model_id / price parameters. -->
+    <record id="ai_model_haiku_4_5" model="perf.ai.model">
+        <field name="name">Haiku 4.5</field>
+        <field name="bedrock_model_id">eu.anthropic.claude-haiku-4-5-20251001-v1:0</field>
+        <field name="region">eu-west-1</field>
+        <field name="price_input_mtok">1.0</field>
+        <field name="price_output_mtok">5.0</field>
+        <field name="send_temperature" eval="True"/>
+        <field name="sequence">10</field>
+    </record>
+    <record id="ai_model_opus_5_5" model="perf.ai.model">
+        <field name="name">Opus 5.5</field>
+        <field name="bedrock_model_id">eu.anthropic.claude-opus-5-5</field>
+        <field name="region">eu-west-1</field>
+        <field name="price_input_mtok">4.0</field>
+        <field name="price_output_mtok">20.0</field>
+        <field name="send_temperature" eval="False"/>
+        <field name="sequence">20</field>
+    </record>
+</odoo>

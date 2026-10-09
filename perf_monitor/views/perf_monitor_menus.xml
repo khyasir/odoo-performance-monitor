@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_perf_root" name="Performance" sequence="95"
+              groups="perf_monitor.group_perf_viewer" web_icon="perf_monitor,static/description/icon.png"/>
+    <menuitem id="menu_perf_my_issues" name="My Issues" parent="menu_perf_root" action="action_perf_issue_my" sequence="4"/>
+    <menuitem id="menu_perf_issues" name="Issues" parent="menu_perf_root" action="action_perf_issue" sequence="5"/>
+    <menuitem id="menu_perf_servers" name="Servers" parent="menu_perf_root" action="action_perf_server" sequence="10"/>
+    <menuitem id="menu_perf_metrics" name="Metrics" parent="menu_perf_root" action="action_perf_metric" sequence="20"/>
+    <menuitem id="menu_perf_sql" name="Top SQL" parent="menu_perf_root" action="action_perf_sql_snapshot" sequence="30"/>
+    <menuitem id="menu_perf_live" name="Live Queries" parent="menu_perf_root" action="action_perf_live_query" sequence="40"/>
+    <menuitem id="menu_perf_slow_calls" name="Slow Calls" parent="menu_perf_root" action="action_perf_agent_slow_call_remote" sequence="50"/>
+    <menuitem id="menu_perf_config" name="Configuration" parent="menu_perf_root" sequence="90"
+              groups="perf_monitor.group_perf_manager"/>
+    <menuitem id="menu_perf_add_server" name="Add Server" parent="menu_perf_config"
+              action="action_perf_server_add_wizard" sequence="10" groups="perf_monitor.group_perf_manager"/>
+    <menuitem id="menu_perf_settings" name="Settings" parent="menu_perf_config"
+              action="action_perf_settings" sequence="20" groups="perf_monitor.group_perf_manager"/>
+    <menuitem id="menu_perf_skip_rules" name="Skip Rules" parent="menu_perf_config"
+              action="action_perf_skip_rule" sequence="25" groups="perf_monitor.group_perf_manager"/>
+    <menuitem id="menu_perf_ai_calls" name="AI calls" parent="menu_perf_config"
+              action="action_perf_ai_call" sequence="30" groups="perf_monitor.group_perf_manager"/>
+    <menuitem id="menu_perf_ai_models" name="AI models" parent="menu_perf_config"
+              action="action_perf_ai_model" sequence="32" groups="perf_monitor.group_perf_manager"/>
+    <menuitem id="menu_perf_ai_lessons" name="AI lessons" parent="menu_perf_config"
+              action="action_perf_ai_lesson" sequence="35" groups="perf_monitor.group_perf_manager"/>
+</odoo>

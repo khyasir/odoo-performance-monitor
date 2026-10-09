@@ -1,0 +1,436 @@
+/* AI Chat tab of perf.issue (views/perf_issue_views.xml page "ai_chat", HTML of perf_ai_text.render_chat_html).
+   Plain CSS rules only (no nesting / variables / mixins): the same text is valid CSS (static preview).
+   Text colours are set explicitly on every coloured surface (readable whatever the theme). */
+
+.o_perf_chat_panel {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 330px);
+    min-height: 420px;
+    color: #1f2328;
+}
+
+/* ---------------------------------------------------------------- top bar */
+.o_perf_chat_topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 0 0 8px 0;
+}
+.o_perf_chat_topbar .o_perf_chat_new {
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+.o_perf_chat_topbar .o_perf_chat_select {
+    width: 220px;
+    max-width: 100%;
+}
+.o_perf_chat_topbar .o_perf_chat_select input {
+    border: 1px solid #d0d7de;
+    border-radius: 999px;
+    padding: 3px 12px;
+    background-color: #ffffff;
+    font-size: 0.92em;
+}
+.o_perf_chat_topbar .o_perf_chat_select input:focus {
+    border-color: #8c959f;
+}
+.o_perf_chat_toggle {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.92em;
+    color: #57606a;
+}
+.o_perf_chat_toggle .o_field_widget {
+    width: auto;
+    margin: 0;
+}
+.o_perf_chat_toggle label,
+.o_perf_chat_toggle .o_form_label {
+    font-weight: normal;
+    color: #57606a;
+    margin: 0;
+}
+.o_perf_chat_usage {
+    margin-left: auto;
+    font-size: 0.85em;
+    color: #6e7781;
+}
+.o_perf_chat_usage .o_field_widget {
+    width: auto;
+}
+.o_perf_chat_disclaimer {
+    font-size: 0.8em;
+    color: #6e7781;
+    padding: 0 0 6px 2px;
+    border-bottom: 1px solid #eaeef2;
+}
+
+/* ---------------------------------------------------------------- message area */
+.o_perf_chat_scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px 12px 8px 12px;
+    background-color: #ffffff;
+}
+.o_perf_chat_column {
+    max-width: 860px;
+    margin: 0 auto;
+}
+.o_perf_chat_column .o_field_widget {
+    width: 100%;
+}
+.o_perf_chat_thread {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #1f2328;
+}
+.o_perf_chat_row {
+    display: flex;
+    min-width: 0;
+}
+.o_perf_chat_row_user {
+    flex-direction: column;
+    align-items: flex-end;
+}
+.o_perf_chat_bubble {
+    max-width: 75%;
+    padding: 9px 15px;
+    border-radius: 20px 20px 6px 20px;
+    background-color: #eef1f6;
+    color: #1f2328;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.o_perf_chat_meta {
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: #8c959f;
+}
+.o_perf_chat_row_user .o_perf_chat_meta {
+    padding-right: 6px;
+}
+.o_perf_chat_refused {
+    color: #bc4c00;
+    font-weight: 500;
+}
+
+.o_perf_chat_row_ai {
+    align-items: flex-start;
+    gap: 12px;
+}
+.o_perf_chat_avatar {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f0883e 0%, #c2410c 100%);
+    color: #ffffff;
+    font-size: 13px;
+    margin-top: 1px;
+}
+.o_perf_chat_ai {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.o_perf_chat_ai_name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #57606a;
+    margin: 4px 0 4px 0;
+}
+.o_perf_chat_badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background-color: #fff1e5;
+    color: #9a3412;
+    font-size: 11px;
+    font-weight: 500;
+}
+.o_perf_chat_answer {
+    word-break: break-word;
+    color: #1f2328;
+}
+.o_perf_chat_answer p {
+    margin: 0 0 10px 0;
+}
+.o_perf_chat_answer ul {
+    margin: 0 0 10px 0;
+    padding-left: 22px;
+}
+.o_perf_chat_answer li {
+    margin: 2px 0;
+}
+.o_perf_chat_answer code {
+    padding: 1px 5px;
+    border-radius: 5px;
+    background-color: #f2f4f7;
+    color: #b42318;
+    font-size: 0.9em;
+}
+.o_perf_chat_answer .o_perf_code {
+    margin: 10px 0 12px 0;
+}
+.o_perf_chat_answer .o_perf_code pre {
+    background-color: #f6f8fa !important;
+    border: 1px solid #e4e7eb !important;
+    border-radius: 10px !important;
+    padding: 12px 14px !important;
+    padding-top: 30px !important;
+    font-size: 12.5px !important;
+    line-height: 1.5;
+    color: #1f2328;
+}
+.o_perf_chat_answer .o_perf_code pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+}
+.o_perf_chat_answer .o_perf_code .o_perf_code_copy {
+    margin: 6px 8px !important;
+    padding: 1px 10px;
+    font-size: 11.5px;
+    border-radius: 6px;
+    background-color: #ffffff;
+    color: #57606a;
+}
+
+.o_perf_chat_row_notice {
+    justify-content: center;
+}
+.o_perf_chat_notice {
+    max-width: 85%;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background-color: #f3f4f6;
+    color: #424a53;
+    font-size: 12.5px;
+    text-align: center;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.o_perf_chat_notice_warning {
+    background-color: #fff6e5;
+    color: #7a4100;
+    border: 1px solid #f5dfb3;
+}
+.o_perf_chat_notice_danger {
+    background-color: #fdeceb;
+    color: #9f1d17;
+    border: 1px solid #f5c6c3;
+}
+.o_perf_chat_notice_date {
+    margin-left: 8px;
+    color: #8c959f;
+    font-size: 11px;
+}
+
+/* ---------------------------------------------------------------- empty state */
+.o_perf_chat_thread_empty {
+    min-height: 100%;
+    justify-content: center;
+}
+.o_perf_chat_empty {
+    text-align: center;
+    padding: 48px 12px 24px 12px;
+}
+.o_perf_chat_empty_icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 14px auto;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f0883e 0%, #c2410c 100%);
+    color: #ffffff;
+    font-size: 22px;
+}
+.o_perf_chat_empty_title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1f2328;
+}
+.o_perf_chat_empty_sub {
+    margin-top: 4px;
+    font-size: 13.5px;
+    color: #6e7781;
+}
+.o_perf_chat_chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 22px;
+}
+.o_perf_chat_chip {
+    border: 1px solid #d0d7de;
+    border-radius: 999px;
+    background-color: #ffffff;
+    color: #24292f;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.o_perf_chat_chip:hover {
+    background-color: #f6f8fa;
+    border-color: #8c959f;
+}
+
+/* ---------------------------------------------------------------- composer */
+.o_perf_chat_footer {
+    padding: 8px 12px 0 12px;
+}
+.o_perf_chat_inputbox {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 8px 8px 8px 18px;
+    border: 1px solid #d0d7de;
+    border-radius: 26px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(31, 35, 40, 0.07);
+}
+.o_perf_chat_inputbox:focus-within {
+    border-color: #8c959f;
+    box-shadow: 0 2px 12px rgba(31, 35, 40, 0.12);
+}
+.o_perf_chat_inputbox .o_perf_chat_composer {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+    margin: 0;
+}
+.o_perf_chat_composer textarea {
+    display: block;
+    width: 100%;
+    min-height: 24px;
+    max-height: 9.5em;
+    overflow-y: auto !important;
+    resize: none;
+    border: 0 !important;
+    outline: none;
+    box-shadow: none !important;
+    background: transparent;
+    padding: 6px 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1f2328;
+}
+.o_perf_chat_composer textarea::placeholder {
+    color: #8c959f;
+}
+.o_perf_chat_inputbox .o_perf_chat_send {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+.o_perf_chat_hint {
+    max-width: 860px;
+    margin: 5px auto 0 auto;
+    text-align: center;
+    font-size: 11.5px;
+    color: #8c959f;
+}
+
+/* ------------------------------------------------ pending answer (shown while the AI works) */
+.o_perf_chat_pending {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 0 12px 0;
+}
+.o_perf_chat_pending.d-none {
+    display: none;
+}
+.o_perf_chat_pending .o_perf_chat_pending_user {
+    align-self: flex-end;
+    max-width: 80%;
+    padding: 8px 14px;
+    border-radius: 18px 18px 4px 18px;
+    background: #e7f1ff;
+    color: #1f2328;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.o_perf_chat_pending .o_perf_chat_pending_ai {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #57606a;
+    font-size: 0.92em;
+}
+.o_perf_chat_pending .o_perf_chat_pending_avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff4e5;
+    color: #d9730d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.o_perf_chat_dots {
+    display: inline-flex;
+    gap: 4px;
+}
+.o_perf_chat_dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #8c959f;
+    animation: o_perf_chat_bounce 1.2s infinite ease-in-out;
+}
+.o_perf_chat_dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+.o_perf_chat_dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+@keyframes o_perf_chat_bounce {
+    0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-4px); }
+}
+@keyframes o_perf_chat_spin {
+    to { transform: rotate(360deg); }
+}
+/* while busy: the send button shows a spinner and cannot be clicked twice */
+.o_perf_chat_panel.o_perf_chat_busy .o_perf_chat_send {
+    pointer-events: none;
+    opacity: 0.85;
+}
+.o_perf_chat_panel.o_perf_chat_busy .o_perf_chat_send .fa {
+    display: none;
+}
+.o_perf_chat_panel.o_perf_chat_busy .o_perf_chat_send::after {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: o_perf_chat_spin 0.8s linear infinite;
+    vertical-align: middle;
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="param_slow_ms" model="ir.config_parameter">
+        <field name="key">perf_monitor_agent.slow_ms</field>
+        <field name="value">10000</field>
+    </record>
+    <record id="param_retention_days" model="ir.config_parameter">
+        <field name="key">perf_monitor_agent.retention_days</field>
+        <field name="value">7</field>
+    </record>
+    <!-- Default central endpoint (staging central perf_monitor), set at install only for the keys not set
+         yet (a function, not records: a key already set by the deploy script must not collide). Override in
+         Settings > Perf Monitor Agent, where the central token is set (never in code / data). The same
+         defaults are applied on upgrade by migrations/16.0.1.2.0 (missing keys only). -->
+    <function model="perf.agent.slow.call" name="_set_default_params">
+        <value eval="{'central_url': 'https://central.example.com', 'central_db': 'demo_db'}"/>
+    </function>
+    <!-- perf_monitor_agent.central_token / enabled (kill switch, default on) are set in Settings, by
+         deploy/deploy_perf_monitor_agent.sh or by hand, and removed by the uninstall hook. Config changes
+         are picked up within 30 s (per-process cache). -->
+</odoo>

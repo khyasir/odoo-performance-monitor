@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.perf_monitor_agent</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div class="app_settings_block" data-string="Perf Monitor Agent" string="Perf Monitor Agent"
+                     data-key="perf_monitor_agent" groups="base.group_system">
+                    <h2>Slow calls</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="perf_agent_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="perf_agent_enabled"/>
+                                <div class="text-muted">Tag DB connections and record the slow calls (off = kill switch)</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_agent_slow_ms"/>
+                                <div class="text-muted">Calls slower than this are recorded with their dashboard / tile / menu / user</div>
+                                <field name="perf_agent_slow_ms"/>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>Central perf_monitor</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_agent_central_url"/>
+                                <div class="text-muted">https:// only (plain http:// only to localhost)</div>
+                                <field name="perf_agent_central_url" placeholder="https://central.example.com"/>
+                                <label for="perf_agent_central_db" class="mt8"/>
+                                <field name="perf_agent_central_db"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_agent_central_token"/>
+                                <div class="text-muted">Current: <field name="perf_agent_token_hint" class="oe_inline"/>. Leave empty to keep it.</div>
+                                <field name="perf_agent_central_token" password="True" autocomplete="new-password"/>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>DB metrics (in-agent collector)</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="perf_agent_collect_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="perf_agent_collect_enabled"/>
+                                <div class="text-muted">Every 5 minutes: DB latency, Top SQL and live / blocked queries of
+                                    this database, pushed with the central token above (no root collector, no
+                                    perf_monitor_ro role)</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="perf_agent_send_host_metrics"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="perf_agent_send_host_metrics"/>
+                                <div class="text-muted">CPU / RAM / disk / load / network of this host. Enable it in
+                                    <b>only one database per host</b> (otherwise the host values are duplicated)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

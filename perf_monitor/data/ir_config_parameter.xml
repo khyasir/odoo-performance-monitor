@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="param_metric_retention_days" model="ir.config_parameter">
+        <field name="key">perf_monitor.metric_retention_days</field>
+        <field name="value">35</field>
+    </record>
+    <record id="param_sql_retention_days" model="ir.config_parameter">
+        <field name="key">perf_monitor.sql_retention_days</field>
+        <field name="value">14</field>
+    </record>
+    <record id="param_live_retention_days" model="ir.config_parameter">
+        <field name="key">perf_monitor.live_retention_days</field>
+        <field name="value">3</field>
+    </record>
+    <record id="param_slow_call_retention_days" model="ir.config_parameter">
+        <field name="key">perf_monitor.slow_call_retention_days</field>
+        <field name="value">14</field>
+    </record>
+    <!-- perf.ai.call: days the input sent to the AI (prompt, tool rounds) is kept; tokens / cost rows stay -->
+    <record id="param_ai_input_retention_days" model="ir.config_parameter">
+        <field name="key">perf_monitor.ai_input_retention_days</field>
+        <field name="value">30</field>
+    </record>
+    <record id="param_max_pushes_per_minute" model="ir.config_parameter">
+        <field name="key">perf_monitor.max_pushes_per_minute</field>
+        <field name="value">10</field>
+    </record>
+    <record id="param_ai_region" model="ir.config_parameter">
+        <field name="key">perf_monitor.ai_region</field>
+        <field name="value">eu-west-1</field>
+    </record>
+    <record id="param_ai_model_id" model="ir.config_parameter">
+        <field name="key">perf_monitor.ai_model_id</field>
+        <field name="value">eu.anthropic.claude-haiku-4-5-20251001-v1:0</field>
+    </record>
+    <record id="param_ai_daily_limit" model="ir.config_parameter">
+        <field name="key">perf_monitor.ai_daily_limit</field>
+        <field name="value">50</field>
+    </record>
+    <record id="param_ai_price_input_mtok" model="ir.config_parameter">
+        <field name="key">perf_monitor.ai_price_input_mtok</field>
+        <field name="value">1.0</field>
+    </record>
+    <record id="param_ai_price_output_mtok" model="ir.config_parameter">
+        <field name="key">perf_monitor.ai_price_output_mtok</field>
+        <field name="value">5.0</field>
+    </record>
+    <!-- per AI run (one analysis / one chat answer, all rounds); an existing install keeps its value
+         (migrations/16.0.1.12.0 links the existing parameter to this record, 60000 = old default -> 150000) -->
+    <record id="param_ai_max_input_tokens" model="ir.config_parameter">
+        <field name="key">perf_monitor.ai_max_input_tokens</field>
+        <field name="value">150000</field>
+    </record>
+    <record id="param_issue_min_ms" model="ir.config_parameter">
+        <field name="key">perf_monitor.issue_min_ms</field>
+        <field name="value">2000</field>
+    </record>
+    <record id="param_issue_min_sql_share" model="ir.config_parameter">
+        <field name="key">perf_monitor.issue_min_sql_share</field>
+        <field name="value">0.5</field>
+    </record>
+    <record id="param_issue_min_query_ms" model="ir.config_parameter">
+        <field name="key">perf_monitor.issue_min_query_ms</field>
+        <field name="value">1000</field>
+    </record>
+    <record id="param_issue_min_repeats" model="ir.config_parameter">
+        <field name="key">perf_monitor.issue_min_repeats</field>
+        <field name="value">50</field>
+    </record>
+    <record id="param_issue_min_occ_7d" model="ir.config_parameter">
+        <field name="key">perf_monitor.issue_min_occ_7d</field>
+        <field name="value">3</field>
+    </record>
+    <!-- perf_monitor.ai_enabled has no record: the AI layer is opt-in (Settings > Performance) -->
+    <record id="param_aws_region" model="ir.config_parameter">
+        <field name="key">perf_monitor.aws_region</field>
+        <field name="value">eu-west-1</field>
+    </record>
+    <!-- perf_monitor.central_url (URL rendered into install.sh) is set by the Add Server wizard and
+         removed by the uninstall hook -->
+</odoo>

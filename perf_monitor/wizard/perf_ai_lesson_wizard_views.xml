@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_ai_lesson_wizard_view_form" model="ir.ui.view">
+        <field name="name">perf.ai.lesson.wizard.form</field>
+        <field name="model">perf.ai.lesson.wizard</field>
+        <field name="arch" type="xml">
+            <form string="AI solution was wrong">
+                <p class="text-muted">Write in one line what the AI must do differently. The lesson is given to the AI and
+                    to the Claude Code prompt of every issue it matches (keywords or regex).</p>
+                <group>
+                    <field name="issue_id" readonly="1" force_save="1"/>
+                    <field name="lesson" placeholder="e.g. write of an _inherit = 'base' class: cache the model names, return super() early"/>
+                    <field name="name"/>
+                    <field name="keywords" placeholder="comma separated"/>
+                    <field name="regex"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Save lesson" class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

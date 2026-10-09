@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_perf_agent_slow_call_system,perf.agent.slow.call system,model_perf_agent_slow_call,base.group_system,1,0,0,1
+access_perf_agent_collector_system,perf.agent.collector system,model_perf_agent_collector,base.group_system,1,0,0,0

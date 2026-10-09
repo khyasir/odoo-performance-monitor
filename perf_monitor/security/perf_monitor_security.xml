@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_category_perf_monitor" model="ir.module.category">
+        <field name="name">Performance Monitor</field>
+        <field name="description">Access to server performance monitoring.</field>
+        <field name="sequence">90</field>
+    </record>
+
+    <record id="group_perf_viewer" model="res.groups">
+        <field name="name">Perf Viewer</field>
+        <field name="category_id" ref="module_category_perf_monitor"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_perf_manager" model="res.groups">
+        <field name="name">Perf Monitor Manager</field>
+        <field name="category_id" ref="module_category_perf_monitor"/>
+        <field name="implied_ids" eval="[(4, ref('group_perf_viewer'))]"/>
+        <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+</odoo>

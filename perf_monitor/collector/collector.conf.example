@@ -1,0 +1,42 @@
+# /etc/perf-monitor/collector.conf  (mode 0640 root:perfmon - contains the token and DB password)
+[collector]
+# Central Odoo running perf_monitor. Must be https://; plain http:// is refused except for 127.0.0.1,
+# [::1] and localhost (staging: the collector runs on the same host as Odoo).
+central_url = http://127.0.0.1:8069
+# Database of the central Odoo; pinned through GET /web?db=<central_db> + session cookie.
+central_db = demo_db
+# Per-server token issued by the "Add Server" wizard (only its sha256 is stored in Odoo).
+token = REPLACE_WITH_TOKEN
+# Read-only monitoring role (see deploy/sql/create_ro_role.sql). PERF_PG_DSN env var overrides it.
+# sslmode=require at least; preferred for RDS: sslmode=verify-full sslrootcert=/path/to/rds/global-bundle.pem
+pg_dsn = host=localhost port=5432 dbname=demo_db user=perf_monitor_ro password=CHANGE_ME sslmode=require
+# Intervals in seconds
+sample_interval = 60
+live_interval = 60
+topsql_interval = 300
+push_interval = 60
+# Local spool used while the central is unreachable (oldest payloads dropped above spool_max_mb)
+spool_path = /var/lib/perf-monitor/spool.db
+state_path = /var/lib/perf-monitor/state.json
+spool_max_mb = 50
+# spooled payloads pushed per cycle; keep below perf_monitor.max_pushes_per_minute (default 10)
+flush_batch = 5
+http_timeout = 15
+backoff_max = 900
+disk_path = /
+# EC2 instance metadata (IMDSv2, 1 s timeout); set to off outside AWS
+imds = on
+log_level = INFO
+
+[thresholds]
+# live queries (pg_stat_activity)
+long_running_s = 5
+idle_in_tx_s = 60
+live_max_rows = 200
+live_query_max_chars = 2000
+# top SQL (pg_stat_statements interval deltas)
+slow_mean_ms = 500
+high_calls = 1000
+high_blks_read = 10000
+top_n = 20
+query_max_chars = 4000

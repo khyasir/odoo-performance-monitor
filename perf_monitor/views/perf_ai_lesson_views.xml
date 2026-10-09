@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_ai_lesson_view_tree" model="ir.ui.view">
+        <field name="name">perf.ai.lesson.tree</field>
+        <field name="model">perf.ai.lesson</field>
+        <field name="arch" type="xml">
+            <tree string="AI lessons">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="lesson"/>
+                <field name="keywords" optional="show"/>
+                <field name="regex" optional="show"/>
+                <field name="issue_id" optional="hide"/>
+                <field name="create_uid" optional="show" string="Created by"/>
+                <field name="active" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_ai_lesson_view_form" model="ir.ui.view">
+        <field name="name">perf.ai.lesson.form</field>
+        <field name="model">perf.ai.lesson</field>
+        <field name="arch" type="xml">
+            <form string="AI lesson">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="bg-danger" attrs="{'invisible': [('active', '=', True)]}"/>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <field name="lesson"/>
+                        <field name="pattern"/>
+                        <field name="keywords"/>
+                        <field name="regex"/>
+                        <field name="issue_id"/>
+                        <field name="create_uid" string="Created by" readonly="1"/>
+                        <field name="active" invisible="1"/>
+                    </group>
+                    <p class="text-muted small">Matching lessons (keywords or regex found in the issue title, key, call site,
+                        model, method, SQL pattern or the code around the call site) are given to the AI analysis, the AI
+                        chat and the Claude Code prompt.</p>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="perf_ai_lesson_view_search" model="ir.ui.view">
+        <field name="name">perf.ai.lesson.search</field>
+        <field name="model">perf.ai.lesson</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="lesson"/>
+                <field name="keywords"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_ai_lesson" model="ir.actions.act_window">
+        <field name="name">AI lessons</field>
+        <field name="res_model">perf.ai.lesson</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No lesson yet</p>
+            <p>Use "AI solution was wrong" on an issue to write a one-line lesson for similar issues.</p>
+        </field>
+    </record>
+</odoo>

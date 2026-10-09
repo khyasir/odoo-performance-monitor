@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Every cron name MUST start with "Perf Monitor: ": staging hygiene scripts deactivate all crons
+     except those whose name starts with this prefix. -->
+<odoo noupdate="1">
+    <record id="ir_cron_agent_push" model="ir.cron">
+        <field name="name">Perf Monitor: agent push</field>
+        <field name="model_id" ref="model_perf_agent_slow_call"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_push()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+
+    <!-- in-agent collector: metrics / Top SQL / live queries to /perf_monitor/api/v1/push -->
+    <record id="ir_cron_agent_collect" model="ir.cron">
+        <field name="name">Perf Monitor: agent collect</field>
+        <field name="model_id" ref="model_perf_agent_collector"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_collect_and_push()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_agent_cleanup" model="ir.cron">
+        <field name="name">Perf Monitor: agent cleanup</field>
+        <field name="model_id" ref="model_perf_agent_slow_call"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_cleanup()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="False"/>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.perf_monitor</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div class="app_settings_block" data-string="Performance" string="Performance"
+                     data-key="perf_monitor" groups="perf_monitor.group_perf_manager">
+                    <h2>AI analysis of issues (Amazon Bedrock)</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="perf_ai_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="perf_ai_enabled"/>
+                                <div class="text-muted">One call per new issue (and the Re-analyse button), with the
+                                    server's IAM role. SQL literal values are removed before sending. Advice only.</div>
+                                <div class="mt8">
+                                    <span class="text-muted">Today (UTC): </span>
+                                    <field name="perf_ai_calls_today" class="oe_inline"/> calls,
+                                    $<field name="perf_ai_cost_today" class="oe_inline"/>;
+                                    <span class="text-muted">this month: </span>$<field name="perf_ai_cost_month" class="oe_inline"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_ai_daily_limit"/>
+                                <div class="text-muted">Bedrock calls allowed per day (automatic + manual)</div>
+                                <field name="perf_ai_daily_limit"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box" groups="perf_monitor.group_perf_manager">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_ai_default_model_id"/>
+                                <div class="text-muted">Model of new issues; each issue (and its chat) can use another one. Model id,
+                                    region, prices (cost log) and temperature support are set per model.</div>
+                                <field name="perf_ai_default_model_id" options="{'no_create': True}"/>
+                                <div class="mt8">
+                                    <button name="%(perf_monitor.action_perf_ai_model)d" type="action" string="AI models"
+                                            class="btn-link" icon="fa-arrow-right"/>
+                                </div>
+                                <label for="perf_ai_region" class="mt8"/>
+                                <div class="text-muted">Default region of new AI models</div>
+                                <field name="perf_ai_region"/>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>AI limits, code tools and chat</h2>
+                    <div class="row mt16 o_settings_container" name="perf_ai_limits">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="perf_ai_tool_use_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="perf_ai_tool_use_enabled"/>
+                                <div class="text-muted">read_file / grep / list_module / find_symbol on this server's addons
+                                    only (.py / .xml / .csv; config, .env, .git, keys, secrets, passwords blocked). No write,
+                                    no shell, no network.</div>
+                                <div class="mt8"><label for="perf_ai_max_tool_rounds" class="me-2"/><field name="perf_ai_max_tool_rounds" class="oe_inline"/></div>
+                                <div><label for="perf_ai_max_files_read" class="me-2"/><field name="perf_ai_max_files_read" class="oe_inline"/></div>
+                                <div><label for="perf_ai_max_bytes_per_read" class="me-2"/><field name="perf_ai_max_bytes_per_read" class="oe_inline"/></div>
+                                <div><label for="perf_ai_max_lines_per_read" class="me-2"/><field name="perf_ai_max_lines_per_read" class="oe_inline"/></div>
+                                <div><label for="perf_ai_snippet_max_chars" class="me-2"/><field name="perf_ai_snippet_max_chars" class="oe_inline"/></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">Token and cost limits</span>
+                                <div class="text-muted">A run (one analysis or one chat answer, all its tool rounds) stops
+                                    at once when a limit is hit: the partial answer is kept with "limit reached". Empty / 0 = default,
+                                    negative values are refused. Two runs started at the same moment (cron + button, two
+                                    managers) are both checked before either is logged, so a budget can be passed by one run
+                                    per concurrent caller. A run also stops before it could pass 80 % of Odoo's
+                                    limit_time_real (the worker kill limit).</div>
+                                <div class="mt8"><label for="perf_ai_max_input_tokens" class="me-2"/><field name="perf_ai_max_input_tokens" class="oe_inline"/></div>
+                                <div><label for="perf_ai_max_output_tokens" class="me-2"/><field name="perf_ai_max_output_tokens" class="oe_inline"/></div>
+                                <div><label for="perf_ai_daily_cost_limit" class="me-2"/><field name="perf_ai_daily_cost_limit" class="oe_inline"/></div>
+                                <div><label for="perf_ai_monthly_cost_limit" class="me-2"/><field name="perf_ai_monthly_cost_limit" class="oe_inline"/></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="perf_ai_chat_enabled"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="perf_ai_chat_enabled"/>
+                                <div class="text-muted">Perf Monitor Managers can ask questions about one issue. Off-topic
+                                    questions are refused without a model call.</div>
+                                <div class="mt8"><field name="perf_ai_chat_tools_enabled" class="oe_inline"/>
+                                    <label for="perf_ai_chat_tools_enabled" class="ms-2"/>
+                                    <div class="text-muted">Chat may read the code (same read-only tools and limits). Off:
+                                        answers from the issue context only. Independent of the analysis tools switch.</div></div>
+                                <div class="mt8"><label for="perf_ai_chat_max_turns" class="me-2"/><field name="perf_ai_chat_max_turns" class="oe_inline"/></div>
+                                <div><label for="perf_ai_chat_max_tokens" class="me-2"/><field name="perf_ai_chat_max_tokens" class="oe_inline"/></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_ai_repo_hint"/>
+                                <div class="text-muted">Repository names given to the Claude Code prompt of an issue</div>
+                                <field name="perf_ai_repo_hint"/>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>Issues and right-sizing</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_issue_min_ms"/>
+                                <div class="text-muted">Slow calls faster than this never create an issue (milliseconds: 2000 ms = 2 s)</div>
+                                <field name="perf_issue_min_ms"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">Only actionable slowness makes an issue</span>
+                                <div class="text-muted">At least one: SQL share of the call or one slow query, N+1, or
+                                    recurring in 7 days (never for /, /web, /web/login, /web/assets/*, /web/webclient/*).
+                                    Other slow calls are kept without an issue. Empty / 0 = default. "One query" is in
+                                    milliseconds (1000 ms = 1 s).</div>
+                                <div class="mt8"><label for="perf_issue_min_sql_share" class="me-2"/><field name="perf_issue_min_sql_share" class="oe_inline"/></div>
+                                <div><label for="perf_issue_min_query_ms" class="me-2"/><field name="perf_issue_min_query_ms" class="oe_inline"/></div>
+                                <div><label for="perf_issue_min_repeats" class="me-2"/><field name="perf_issue_min_repeats" class="oe_inline"/></div>
+                                <div><label for="perf_issue_min_occ_7d" class="me-2"/><field name="perf_issue_min_occ_7d" class="oe_inline"/></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_issue_assignee_id"/>
+                                <div class="text-muted">New and reopened issues are assigned to this user, with an Odoo To-Do activity (no e-mail)</div>
+                                <field name="perf_issue_assignee_id" options="{'no_create': True}"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="perf_aws_region"/>
+                                <div class="text-muted">Region of the EC2 / RDS instances (CloudWatch, pricing)</div>
+                                <field name="perf_aws_region"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

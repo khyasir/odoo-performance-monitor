@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_server_add_wizard_view_form" model="ir.ui.view">
+        <field name="name">perf.server.add.wizard.form</field>
+        <field name="model">perf.server.add.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Add Server">
+                <field name="state" invisible="1"/>
+                <div class="alert alert-info" role="alert" attrs="{'invisible': [('state', '=', 'done')]}">
+                    One card per monitored database. The <b>Name</b> identifies the card and must be unique (the
+                    database name may repeat across hosts). After "Create" you get a token to paste in
+                    <b>Settings &gt; Perf Monitor Agent</b> of the monitored database (recommended, module only);
+                    the root collector installer is still offered as an optional alternative.
+                </div>
+                <group attrs="{'invisible': [('state', '=', 'done')]}">
+                    <group>
+                        <field name="name"/>
+                        <field name="environment"/>
+                        <field name="host"/>
+                    </group>
+                    <group>
+                        <field name="db_name"/>
+                        <field name="pg_host"/>
+                        <field name="central_url"/>
+                    </group>
+                </group>
+                <field name="mode" invisible="1"/>
+                <field name="source_kind" invisible="1"/>
+                <div name="regenerate_collector"
+                     attrs="{'invisible': ['|', '|', ('state', '!=', 'done'), ('mode', '!=', 'regenerate'), ('source_kind', '=', 'agent')]}">
+                    <div class="alert alert-danger" role="alert">
+                        The previous token is revoked: the collector is now getting <b>HTTP 401</b> and stores
+                        nothing until the new token is in <code>/etc/perf-monitor/collector.conf</code> and the
+                        collector is restarted. This token is shown <b>only once</b>.
+                    </div>
+                    <p>
+                        Monitored by <b>perf_monitor_agent</b> (module only)? Paste the new token in
+                        <b>Settings &gt; Perf Monitor Agent &gt; New central token</b> of the monitored database and
+                        save: nothing else to do. Root collector (legacy):
+                    </p>
+                    <ol>
+                        <li>On the monitored server, set <code>token = &lt;new token&gt;</code> in
+                            <code>/etc/perf-monitor/collector.conf</code> (or run the one-liner below).</li>
+                        <li>Restart the collector: <code>sudo systemctl restart perf-monitor-collector</code>.</li>
+                        <li>Confirm the pushes return 200: <code>journalctl -u perf-monitor-collector -n 20</code>
+                            (no 401) and "Last seen" of this server moves within a few minutes.</li>
+                    </ol>
+                    <group>
+                        <field name="token" widget="CopyClipboardChar"/>
+                        <field name="conf_path"/>
+                        <field name="conf_command" widget="CopyClipboardText"/>
+                        <field name="restart_command" widget="CopyClipboardChar"/>
+                    </group>
+                    <details>
+                        <summary class="text-muted">Collector not installed yet? Full install command instead</summary>
+                        <field name="install_command" widget="CopyClipboardText"/>
+                    </details>
+                </div>
+                <div name="regenerate_agent"
+                     attrs="{'invisible': ['|', '|', ('state', '!=', 'done'), ('mode', '!=', 'regenerate'), ('source_kind', '!=', 'agent')]}">
+                    <div class="alert alert-danger" role="alert">
+                        The previous token is revoked: perf_monitor_agent of this database is now getting
+                        <b>HTTP 401</b> until it uses the new token. This token is shown <b>only once</b>.
+                    </div>
+                    <ol>
+                        <li>Paste it in <b>Settings &gt; Perf Monitor Agent &gt; New central token</b> of the monitored
+                            database (system parameter <code>perf_monitor_agent.central_token</code>), or re-run
+                            <code>deploy_perf_monitor_agent.sh</code>.</li>
+                        <li>Confirm the next slow calls push returns 200 ("Last push" of this source moves).</li>
+                    </ol>
+                    <group>
+                        <field name="token" widget="CopyClipboardChar"/>
+                    </group>
+                </div>
+                <div name="add_done" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('mode', '=', 'regenerate')]}">
+                    <div class="alert alert-warning" role="alert">
+                        Copy the token now: it is shown <b>only once</b> (only its hash is stored).
+                    </div>
+                    <h3>Recommended: perf_monitor_agent module only (no root script)</h3>
+                    <ol>
+                        <li>In the monitored database, install the module <code>perf_monitor_agent</code>.</li>
+                        <li>Open <b>Settings &gt; Perf Monitor Agent</b> and paste the <b>Central URL</b>,
+                            the <b>Central database</b> and the <b>token</b> below, then Save.</li>
+                        <li>Keep "Collect DB metrics" on. Keep "Send host metrics" on in <b>one</b> database per
+                            host only (CPU / RAM / disk / network are the same for every database of a host).</li>
+                        <li>Within 5 minutes this card shows Metrics, Top SQL, Live queries and Slow calls
+                            ("Perf Monitor: agent collect" / "Perf Monitor: agent push" crons).</li>
+                    </ol>
+                    <group>
+                        <field name="central_url" readonly="1" widget="CopyClipboardChar" string="Central URL"/>
+                        <field name="central_db" widget="CopyClipboardChar"/>
+                        <field name="token" widget="CopyClipboardChar"/>
+                    </group>
+                    <details>
+                        <summary class="text-muted">Optional / legacy: root collector install command (perf_collector.py service)</summary>
+                        <div class="alert alert-info mt-2" role="alert">
+                            Only if you cannot install perf_monitor_agent. Run it as root on the monitored server,
+                            after replacing CHANGE_ME with the password of the read-only role
+                            <code>perf_monitor_ro</code>. It contains the same token.
+                        </div>
+                        <field name="install_command" widget="CopyClipboardText"/>
+                    </details>
+                </div>
+                <footer>
+                    <button name="action_confirm" type="object" string="Create server &amp; token" class="btn-primary"
+                            attrs="{'invisible': [('state', '=', 'done')]}"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"
+                            attrs="{'invisible': [('state', '=', 'done')]}"/>
+                    <button name="action_close" type="object" string="I copied it, close" class="btn-primary"
+                            attrs="{'invisible': [('state', '!=', 'done')]}"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_perf_server_add_wizard" model="ir.actions.act_window">
+        <field name="name">Add Server</field>
+        <field name="res_model">perf.server.add.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="groups_id" eval="[(4, ref('perf_monitor.group_perf_manager'))]"/>
+    </record>
+</odoo>

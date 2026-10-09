@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_server_view_kanban" model="ir.ui.view">
+        <field name="name">perf.server.kanban</field>
+        <field name="model">perf.server</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile" create="false" sample="1">
+                <field name="id"/>
+                <field name="name"/>
+                <field name="environment"/>
+                <field name="status"/>
+                <field name="instance_type"/>
+                <field name="vcpu"/>
+                <field name="ram_mb"/>
+                <field name="cpu_pct"/>
+                <field name="ram_pct"/>
+                <field name="disk_pct"/>
+                <field name="db_latency_ms"/>
+                <field name="last_seen"/>
+                <field name="rightsize_recommendation"/>
+                <field name="rs_ec2_line"/>
+                <field name="rs_rds_line"/>
+                <field name="rs_saving_month"/>
+                <field name="source_kind"/>
+                <field name="db_name"/>
+                <field name="host_server_id"/>
+                <field name="slow_calls_24h"/>
+                <field name="slow_calls_7d"/>
+                <field name="last_slow_call"/>
+                <field name="last_push"/>
+                <field name="pgss_status"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <t t-if="record.source_kind.raw_value == 'agent'">
+                        <div t-attf-class="oe_kanban_global_click oe_kanban_card o_perf_agent_card border border-info border-start border-4">
+                            <div class="o_kanban_record_top mb-1">
+                                <div class="o_kanban_record_headings">
+                                    <strong class="o_kanban_record_title">
+                                        <i t-attf-class="fa fa-database me-1 #{record.status.raw_value == 'green' ? 'text-success' : record.status.raw_value == 'yellow' ? 'text-warning' : 'text-info'}"
+                                           t-att-title="record.status.value"/>
+                                        <t t-if="record.db_name.raw_value"><field name="db_name"/></t>
+                                        <t t-else=""><field name="name"/></t>
+                                    </strong>
+                                </div>
+                                <span class="badge rounded-pill bg-info text-white">DB agent</span>
+                            </div>
+                            <div class="text-muted small">
+                                slow calls only<t t-if="record.host_server_id.raw_value"> · on <field name="host_server_id"/></t>
+                            </div>
+                            <div class="row mt-2 text-center">
+                                <div class="col-6"><div class="small text-muted">Slow calls 24h</div><strong><t t-esc="record.slow_calls_24h.raw_value"/></strong></div>
+                                <div class="col-6"><div class="small text-muted">Slow calls 7d</div><strong><t t-esc="record.slow_calls_7d.raw_value"/></strong></div>
+                            </div>
+                            <div class="small mt-2">
+                                <span class="text-muted">Last slow call: </span>
+                                <t t-if="record.last_slow_call.raw_value"><field name="last_slow_call"/></t>
+                                <t t-else="">none</t>
+                            </div>
+                            <div class="small mt-1">
+                                <span class="text-muted">Last push: </span>
+                                <t t-if="record.last_push.raw_value"><field name="last_push"/></t>
+                                <t t-else="">never</t>
+                            </div>
+                            <div class="small mt-1" t-if="record.pgss_status.raw_value != 'unknown'">
+                                <span t-attf-class="badge #{record.pgss_status.raw_value == 'ok' ? 'bg-success text-white' : 'bg-warning text-dark'}"
+                                      title="pg_stat_statements on this database (open the card for the fix)"><field name="pgss_status"/></span>
+                            </div>
+                        </div>
+                        </t>
+                        <t t-else="">
+                        <div t-attf-class="oe_kanban_global_click oe_kanban_card border-start border-4 #{record.status.raw_value == 'green' ? 'border-success' : record.status.raw_value == 'yellow' ? 'border-warning' : record.status.raw_value == 'red' ? 'border-danger' : 'border-secondary'}">
+                            <div class="o_kanban_record_top mb-1">
+                                <div class="o_kanban_record_headings">
+                                    <strong class="o_kanban_record_title">
+                                        <i t-attf-class="fa fa-circle me-1 #{record.status.raw_value == 'green' ? 'text-success' : record.status.raw_value == 'yellow' ? 'text-warning' : record.status.raw_value == 'red' ? 'text-danger' : 'text-muted'}"
+                                           t-att-title="record.status.value"/>
+                                        <field name="name"/>
+                                    </strong>
+                                </div>
+                                <span t-attf-class="badge rounded-pill text-white #{record.environment.raw_value == 'live' ? 'bg-danger' : 'bg-info'}">
+                                    <field name="environment"/>
+                                </span>
+                            </div>
+                            <div class="text-muted small">
+                                <t t-if="record.instance_type.raw_value"><field name="instance_type"/></t>
+                                <t t-else="">unknown</t>
+                                <t t-if="record.vcpu.raw_value"> · <field name="vcpu"/> vCPU</t>
+                                <t t-if="record.ram_mb.raw_value"> · <field name="ram_mb"/> MB</t>
+                            </div>
+                            <div class="row mt-2 text-center">
+                                <div class="col-4"><div class="small text-muted">CPU</div><strong><t t-esc="Math.round(record.cpu_pct.raw_value)"/>%</strong></div>
+                                <div class="col-4"><div class="small text-muted">RAM</div><strong><t t-esc="Math.round(record.ram_pct.raw_value)"/>%</strong></div>
+                                <div class="col-4"><div class="small text-muted">Disk</div><strong><t t-esc="Math.round(record.disk_pct.raw_value)"/>%</strong></div>
+                            </div>
+                            <div class="small mt-2">
+                                <span class="text-muted">Last seen: </span>
+                                <t t-if="record.last_seen.raw_value"><field name="last_seen"/></t>
+                                <t t-else="">never</t>
+                                <span class="text-muted ms-2">DB: </span><field name="db_latency_ms"/> ms
+                            </div>
+                            <div class="small mt-1">
+                                <span t-attf-class="badge #{record.pgss_status.raw_value == 'ok' ? 'bg-success text-white' : record.pgss_status.raw_value == 'unknown' ? 'bg-light text-muted' : 'bg-warning text-dark'}"
+                                      title="pg_stat_statements on the monitored database (open the card for the fix)">
+                                    <t t-if="record.pgss_status.raw_value == 'unknown'">Top SQL: unknown</t>
+                                    <field t-else="" name="pgss_status"/>
+                                </span>
+                            </div>
+                            <div class="small mt-1 text-wrap o_perf_rightsize_card">
+                                <span class="text-muted">Right-size: </span>
+                                <t t-if="record.rs_ec2_line.raw_value or record.rs_rds_line.raw_value">
+                                    <div t-if="record.rs_ec2_line.raw_value"><i class="fa fa-server me-1" title="EC2"/><field name="rs_ec2_line"/></div>
+                                    <div t-if="record.rs_rds_line.raw_value"><i class="fa fa-database me-1" title="RDS"/><field name="rs_rds_line"/></div>
+                                    <div t-if="record.rs_saving_month.raw_value" class="text-success fw-bold">
+                                        Possible saving: $<t t-esc="record.rs_saving_month.raw_value.toFixed(2)"/>/month
+                                    </div>
+                                </t>
+                                <field t-else="" name="rightsize_recommendation"/>
+                            </div>
+                            <div class="small mt-1" t-if="record.slow_calls_7d.raw_value or record.last_push.raw_value">
+                                <i class="fa fa-hourglass-half me-1" title="Slow calls"/>
+                                <span class="text-muted">Slow calls 24h / 7d: </span>
+                                <t t-esc="record.slow_calls_24h.raw_value"/> / <t t-esc="record.slow_calls_7d.raw_value"/>
+                            </div>
+                        </div>
+                        </t>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="perf_server_view_tree" model="ir.ui.view">
+        <field name="name">perf.server.tree</field>
+        <field name="model">perf.server</field>
+        <field name="arch" type="xml">
+            <tree string="Servers" create="false"
+                  decoration-success="status == 'green'" decoration-warning="status == 'yellow'"
+                  decoration-danger="status == 'red'" decoration-muted="status == 'unknown'">
+                <field name="name"/>
+                <field name="source_kind" optional="show"/>
+                <field name="environment"/>
+                <field name="status"/>
+                <field name="host"/>
+                <field name="db_name"/>
+                <field name="instance_type" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                <field name="cpu_pct" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                <field name="ram_pct" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                <field name="disk_pct" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                <field name="db_latency_ms" optional="show" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                <field name="pgss_status" string="Top SQL" optional="show" widget="badge"
+                       decoration-success="pgss_status == 'ok'" decoration-warning="pgss_status in ('missing', 'unreadable')"
+                       decoration-muted="pgss_status == 'unknown'"/>
+                <field name="last_seen" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                <field name="last_push" optional="show" attrs="{'invisible': [('source_kind', '!=', 'agent')]}"/>
+                <field name="rightsize_recommendation" optional="show" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_server_view_form" model="ir.ui.view">
+        <field name="name">perf.server.form</field>
+        <field name="model">perf.server</field>
+        <field name="arch" type="xml">
+            <form string="Server" create="false">
+                <header>
+                    <button name="action_compute_rightsize" type="object" string="Recompute right-size"
+                            class="btn-primary" groups="perf_monitor.group_perf_manager"
+                            attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                    <button name="action_regenerate_token" type="object" string="Regenerate token"
+                            groups="perf_monitor.group_perf_manager"
+                            attrs="{'invisible': [('source_kind', '=', 'agent')]}"
+                            confirm="WARNING - the collector will STOP. Regenerating revokes the current token immediately: every push of the collector on this server fails with HTTP 401 (no metrics, no SQL, no live queries) until token = in /etc/perf-monitor/collector.conf on the monitored server is replaced with the new token (shown once in the next step) and the collector is restarted (sudo systemctl restart perf-monitor-collector), or - when perf_monitor_agent pushes with this token - until the new token is saved in Settings &gt; Perf Monitor Agent of the monitored database. Only continue if you can update that server now."/>
+                    <button name="action_regenerate_token" type="object" string="Regenerate token"
+                            groups="perf_monitor.group_perf_manager"
+                            attrs="{'invisible': [('source_kind', '!=', 'agent')]}"
+                            confirm="WARNING - slow call pushes will STOP. Regenerating revokes the current token immediately: perf_monitor_agent of this database gets HTTP 401 until its system parameter perf_monitor_agent.central_token is set to the new token (shown once in the next step) or deploy_perf_monitor_agent.sh is re-run. Only continue if you can update that database now."/>
+                    <button name="action_revoke_token" type="object" string="Revoke"
+                            groups="perf_monitor.group_perf_manager"
+                            attrs="{'invisible': ['|', ('token_hint', '=', False), ('source_kind', '=', 'agent')]}"
+                            confirm="WARNING - the collector will STOP. Revoking deletes the token: every push of the collector on this server fails with HTTP 401 until a new token is issued with Regenerate token and written to /etc/perf-monitor/collector.conf (then sudo systemctl restart perf-monitor-collector). Continue?"/>
+                    <button name="action_revoke_token" type="object" string="Revoke"
+                            groups="perf_monitor.group_perf_manager"
+                            attrs="{'invisible': ['|', ('token_hint', '=', False), ('source_kind', '!=', 'agent')]}"
+                            confirm="WARNING - slow call pushes will STOP. Revoking deletes the token: perf_monitor_agent of this database gets HTTP 401 until a new token is issued with Regenerate token and set as perf_monitor_agent.central_token. Continue?"/>
+                    <field name="status" widget="statusbar" statusbar_visible="green,yellow,red,unknown"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <!-- DB agent cards (legacy "agent:" host) show them too once such data arrived -->
+                        <button name="action_open_metrics" type="object" class="oe_stat_button" icon="fa-line-chart"
+                                attrs="{'invisible': [('source_kind', '=', 'agent'), ('metric_count', '=', 0)]}">
+                            <field name="metric_count" widget="statinfo" string="Metrics"/>
+                        </button>
+                        <button name="action_open_sql" type="object" class="oe_stat_button" icon="fa-database"
+                                attrs="{'invisible': [('source_kind', '=', 'agent'), ('sql_count', '=', 0)]}">
+                            <field name="sql_count" widget="statinfo" string="Top SQL"/>
+                        </button>
+                        <button name="action_open_live" type="object" class="oe_stat_button" icon="fa-bolt"
+                                attrs="{'invisible': [('source_kind', '=', 'agent'), ('live_count', '=', 0)]}">
+                            <field name="live_count" widget="statinfo" string="Live queries"/>
+                        </button>
+                        <!-- every card: perf_monitor_agent pushes slow calls with the token of a server card too -->
+                        <button name="action_open_slow_calls" type="object" class="oe_stat_button" icon="fa-hourglass-half">
+                            <field name="slow_calls_7d" widget="statinfo" string="Slow calls 7d"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="bg-danger"
+                            attrs="{'invisible': [('active', '=', True)]}"/>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Server name"/></h1>
+                    </div>
+                    <div class="alert alert-warning" role="alert" name="pgss_hint"
+                         attrs="{'invisible': [('pgss_status', 'not in', ('missing', 'unreadable'))]}">
+                        <strong>Top SQL is OFF for this database: pg_stat_statements is
+                            <span attrs="{'invisible': [('pgss_status', '!=', 'missing')]}">not installed</span>
+                            <span attrs="{'invisible': [('pgss_status', '!=', 'unreadable')]}">not readable</span>.</strong>
+                        Metrics, live queries and slow calls still work. To enable it (by hand, nothing is installed
+                        automatically): add <code>pg_stat_statements</code> to <code>shared_preload_libraries</code>
+                        (AWS RDS: the DB parameter group, often already there; restart the DB only if it was not),
+                        then as the master user / superuser run
+                        <code>CREATE EXTENSION IF NOT EXISTS pg_stat_statements;</code> in the monitored database and
+                        check with <code>SELECT count(*) FROM pg_stat_statements;</code>.
+                        Small overhead, stores normalized query texts. See the perf_monitor README.
+                    </div>
+                    <group>
+                        <group string="Server">
+                            <field name="active" invisible="1"/>
+                            <field name="source_kind"/>
+                            <field name="environment"/>
+                            <field name="host"/>
+                            <field name="db_name"/>
+                            <field name="hostname" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                            <field name="last_seen" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                            <field name="last_push" string="Last slow calls push"
+                                   attrs="{'invisible': ['|', ('source_kind', '=', 'agent'), ('last_push', '=', False)]}"/>
+                            <field name="pgss_status" widget="badge" decoration-success="pgss_status == 'ok'"
+                                   decoration-warning="pgss_status in ('missing', 'unreadable')"/>
+                            <field name="pgss_checked_at" attrs="{'invisible': [('pgss_checked_at', '=', False)]}"/>
+                        </group>
+                        <group string="DB agent (slow calls only)" name="agent"
+                               attrs="{'invisible': [('source_kind', '!=', 'agent')]}">
+                            <field name="host_server_id" options="{'no_create': True}"/>
+                            <field name="last_push"/>
+                            <field name="slow_calls_24h"/>
+                            <field name="slow_calls_7d"/>
+                            <field name="last_slow_call"/>
+                        </group>
+                        <group string="Instance" attrs="{'invisible': [('source_kind', '=', 'agent')]}">
+                            <field name="instance_type"/>
+                            <field name="instance_id"/>
+                            <field name="region"/>
+                            <field name="az"/>
+                            <field name="vcpu"/>
+                            <field name="ram_mb"/>
+                            <field name="odoo_version"/>
+                            <field name="pg_version"/>
+                        </group>
+                        <group string="Latest sample" attrs="{'invisible': [('source_kind', '=', 'agent'), ('metric_count', '=', 0)]}">
+                            <field name="metric_ts"/>
+                            <field name="cpu_pct"/>
+                            <field name="ram_pct"/>
+                            <field name="disk_pct"/>
+                            <field name="load1"/>
+                            <field name="net_rx_kbps"/>
+                            <field name="net_tx_kbps"/>
+                            <field name="db_latency_ms"/>
+                        </group>
+                        <group string="Right-sizing" attrs="{'invisible': [('source_kind', '=', 'agent')]}">
+                            <field name="metric_days"/>
+                            <field name="rightsize_recommendation"/>
+                            <field name="rightsize_date"/>
+                            <field name="rds_instance_id"/>
+                            <field name="rs_saving_month"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Right-size (CloudWatch)" name="rightsize" attrs="{'invisible': [('source_kind', '=', 'agent')]}">
+                            <field name="rs_html" nolabel="1"/>
+                            <p class="text-muted small" attrs="{'invisible': [('rs_html', '!=', False)]}">
+                                Not computed yet: click "Recompute right-size" (daily cron "Perf Monitor: Right-size from CloudWatch").
+                            </p>
+                        </page>
+                        <page string="Latest metrics" name="metrics" attrs="{'invisible': [('source_kind', '=', 'agent'), ('metric_count', '=', 0)]}">
+                            <field name="recent_metric_ids" readonly="1">
+                                <tree limit="20">
+                                    <field name="ts"/>
+                                    <field name="cpu_pct"/>
+                                    <field name="iowait_pct"/>
+                                    <field name="load1"/>
+                                    <field name="ram_pct"/>
+                                    <field name="swap_used_mb"/>
+                                    <field name="disk_pct"/>
+                                    <field name="net_rx_kbps"/>
+                                    <field name="net_tx_kbps"/>
+                                    <field name="db_latency_ms"/>
+                                    <field name="pg_connections"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Top SQL snapshots" name="sql" attrs="{'invisible': [('source_kind', '=', 'agent'), ('sql_count', '=', 0)]}">
+                            <field name="recent_sql_ids" readonly="1">
+                                <tree limit="20">
+                                    <field name="ts"/>
+                                    <field name="queryid"/>
+                                    <field name="query"/>
+                                    <field name="calls"/>
+                                    <field name="total_ms"/>
+                                    <field name="mean_ms"/>
+                                    <field name="shared_blks_read"/>
+                                    <field name="reason"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Live queries" name="live" attrs="{'invisible': [('source_kind', '=', 'agent'), ('live_count', '=', 0)]}">
+                            <field name="recent_live_ids" readonly="1">
+                                <tree limit="20">
+                                    <field name="ts"/>
+                                    <field name="category"/>
+                                    <field name="pid"/>
+                                    <field name="usename"/>
+                                    <field name="state"/>
+                                    <field name="wait_event_type"/>
+                                    <field name="duration_s"/>
+                                    <field name="blocking_pids"/>
+                                    <field name="query"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Token" name="collector">
+                            <group>
+                                <field name="collector_version" attrs="{'invisible': [('source_kind', '=', 'agent')]}"/>
+                                <field name="token_hint"/>
+                            </group>
+                            <p class="text-muted" attrs="{'invisible': [('source_kind', '=', 'agent')]}">
+                                Only the SHA-256 of the token is stored. "Regenerate token" revokes the current
+                                token at once (the collector gets HTTP 401) and shows the new one once: put it in
+                                token = of /etc/perf-monitor/collector.conf, then sudo systemctl restart
+                                perf-monitor-collector. "Revoke" stops the collector until a new token is issued.
+                                With perf_monitor_agent (module only, preferred) the same token is saved in
+                                Settings &gt; Perf Monitor Agent of the monitored database: it pushes the slow calls
+                                and, with "Collect DB metrics", the metrics / Top SQL / live queries of this card.
+                            </p>
+                            <p class="text-muted" attrs="{'invisible': [('source_kind', '!=', 'agent')]}">
+                                Only the SHA-256 of the token is stored. perf_monitor_agent of this database pushes
+                                its slow calls with this token (system parameter perf_monitor_agent.central_token of
+                                the monitored DB). "Regenerate token" revokes it: re-run deploy_perf_monitor_agent.sh
+                                (or set the new token in the monitored DB); "Revoke" stops the pushes (HTTP 401).
+                            </p>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="perf_server_view_search" model="ir.ui.view">
+        <field name="name">perf.server.search</field>
+        <field name="model">perf.server</field>
+        <field name="arch" type="xml">
+            <search string="Servers">
+                <field name="name"/>
+                <field name="host"/>
+                <field name="db_name"/>
+                <field name="instance_type"/>
+                <filter name="staging" string="Staging" domain="[('environment', '=', 'staging')]"/>
+                <filter name="live" string="Live" domain="[('environment', '=', 'live')]"/>
+                <separator/>
+                <filter name="collectors" string="Servers (collector)" domain="[('source_kind', '=', 'collector')]"/>
+                <filter name="agents" string="DB agents" domain="[('source_kind', '=', 'agent')]"/>
+                <separator/>
+                <filter name="red" string="Red" domain="[('status', '=', 'red')]"/>
+                <filter name="pgss_off" string="Top SQL OFF (pg_stat_statements)"
+                        domain="[('pgss_status', 'in', ('missing', 'unreadable'))]"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_source_kind" string="Source" context="{'group_by': 'source_kind'}"/>
+                    <filter name="group_env" string="Env" context="{'group_by': 'environment'}"/>
+                    <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                    <filter name="group_instance_type" string="Instance type" context="{'group_by': 'instance_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_server" model="ir.actions.act_window">
+        <field name="name">Servers</field>
+        <field name="res_model">perf.server</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No monitored server yet</p>
+            <p>Use Performance &gt; Configuration &gt; Add Server to register one and get its install command.</p>
+        </field>
+    </record>
+</odoo>

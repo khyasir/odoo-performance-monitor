@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="perf_sql_snapshot_view_tree" model="ir.ui.view">
+        <field name="name">perf.sql.snapshot.tree</field>
+        <field name="model">perf.sql.snapshot</field>
+        <field name="arch" type="xml">
+            <tree string="Top SQL" create="false" edit="false">
+                <field name="ts"/>
+                <field name="server_id"/>
+                <field name="queryid" optional="show"/>
+                <field name="query"/>
+                <field name="calls" sum="Total"/>
+                <field name="total_ms" sum="Total"/>
+                <field name="mean_ms"/>
+                <field name="max_ms" optional="show"/>
+                <field name="cum_mean_ms" optional="hide"/>
+                <field name="rows" optional="hide"/>
+                <field name="shared_blks_hit" optional="hide"/>
+                <field name="shared_blks_read" optional="show"/>
+                <field name="temp_blks_read" optional="hide"/>
+                <field name="temp_blks_written" optional="hide"/>
+                <field name="reason"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="perf_sql_snapshot_view_form" model="ir.ui.view">
+        <field name="name">perf.sql.snapshot.form</field>
+        <field name="model">perf.sql.snapshot</field>
+        <field name="arch" type="xml">
+            <form string="SQL snapshot" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="server_id"/>
+                            <field name="ts"/>
+                            <field name="queryid"/>
+                            <field name="reason"/>
+                        </group>
+                        <group>
+                            <field name="calls"/>
+                            <field name="total_ms"/>
+                            <field name="mean_ms"/>
+                            <field name="max_ms"/>
+                            <field name="cum_mean_ms"/>
+                            <field name="rows"/>
+                        </group>
+                        <group string="I/O">
+                            <field name="shared_blks_hit"/>
+                            <field name="shared_blks_read"/>
+                            <field name="temp_blks_read"/>
+                            <field name="temp_blks_written"/>
+                        </group>
+                    </group>
+                    <separator string="Query (normalized by pg_stat_statements)"/>
+                    <field name="query" widget="code" options="{'mode': 'sql'}"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="perf_sql_snapshot_view_search" model="ir.ui.view">
+        <field name="name">perf.sql.snapshot.search</field>
+        <field name="model">perf.sql.snapshot</field>
+        <field name="arch" type="xml">
+            <search string="Top SQL">
+                <field name="query"/>
+                <field name="queryid"/>
+                <field name="server_id"/>
+                <filter name="slow_mean" string="Slow mean" domain="[('reason', 'ilike', 'slow_mean')]"/>
+                <filter name="high_calls" string="High calls" domain="[('reason', 'ilike', 'high_calls')]"/>
+                <filter name="io" string="Disk reads" domain="[('reason', 'ilike', 'io')]"/>
+                <filter name="temp" string="Temp files" domain="[('reason', 'ilike', 'temp')]"/>
+                <separator/>
+                <filter name="last_24h" string="Last 24 hours"
+                        domain="[('ts', '&gt;=', (context_today() - relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                <filter name="ts" string="Date" date="ts"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_queryid" string="Query ID" context="{'group_by': 'queryid'}"/>
+                    <filter name="group_server" string="Server" context="{'group_by': 'server_id'}"/>
+                    <filter name="group_ts" string="Day" context="{'group_by': 'ts:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_perf_sql_snapshot" model="ir.actions.act_window">
+        <field name="name">Top SQL</field>
+        <field name="res_model">perf.sql.snapshot</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">No top SQL yet</p>
+            <p>Requires the pg_stat_statements extension on the monitored database; sampled every 5 minutes.</p>
+            <p>Performance &gt; Servers shows per server "Top SQL: ON" or "Top SQL OFF - pg_stat_statements
+                missing". To enable it: <code>pg_stat_statements</code> in <code>shared_preload_libraries</code>
+                (AWS RDS: DB parameter group; restart only if it was not there), then
+                <code>CREATE EXTENSION IF NOT EXISTS pg_stat_statements;</code> in the monitored database as the
+                master user. Nothing is installed automatically (see the README).</p>
+        </field>
+    </record>
+</odoo>
